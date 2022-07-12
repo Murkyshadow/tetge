@@ -21,6 +21,7 @@ class tetge():
         down = False
         size_pl = [17, 20]  # размер персонажа в пикселях
 
+
         self.coor_player = [192, 552]
         self.player_img = pygame.image.load('img/player.png')  # выведим игрока
         win.blit(self.player_img, (self.coor_player))
