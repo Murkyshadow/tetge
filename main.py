@@ -20,7 +20,7 @@ class tetge():
         height_jump = 48
         down = False
         size_pl = [17, 20]  # размер персонажа в пикселях
-
+        pygame.font.init()
 
         self.coor_player = [192, 552]
         self.player_img = pygame.image.load('img/player.png')  # выведим игрока
@@ -36,6 +36,11 @@ class tetge():
             row_pl = len(self.field[0]) - self.coor_player[1] // 24 - 5  # Y персонажа
             pygame.time.delay(6)
             self.max_h = max(self.max_h, row_pl)
+
+            win.fill((0, 0, 0), (0, 0, 200, 35))
+            my_font = pygame.font.SysFont('Comic Sans MS', 30)
+            text_surface = my_font.render('Счёт: ' + str(self.max_h), False, (30, 30, 30))
+            win.blit(text_surface, (0, 0))
 
             if row_pl - (len(self.field[0]) - 28) > 10:
                 self.max_h += 1
