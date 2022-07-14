@@ -17,15 +17,15 @@ class tetge():
         self.now_blocks = []  # блоки в падении
         self.now_animation = False  # обозначает, что сейчас не происходит прорисовка падения блоков
         self.now_jump = False
-        height_jump = 48
+        height_jump = 55
+        max_jump = 55
         down = False
         size_pl = [17, 20]  # размер персонажа в пикселях
         pygame.font.init()
+        self.stop = False
 
         self.coor_player = [192, 552]
         self.player_img = pygame.image.load('img/player.png')  # выведим игрока
-        win.blit(self.player_img, (self.coor_player))
-        pygame.display.update()
 
         for i in range(18):
             self.field.append([0] * 28)  # одновременно видно будет только 24 клетки (вверх) и 18 клеток в ширину
@@ -34,16 +34,11 @@ class tetge():
         while 1:
             col_pl = self.coor_player[0] // 24  # X персонажа
             row_pl = len(self.field[0]) - self.coor_player[1] // 24 - 5  # Y персонажа
-            pygame.time.delay(6)
-            self.max_h = max(self.max_h, row_pl)
+            pygame.time.delay(5)
+            self.score()
 
-            win.fill((0, 0, 0), (0, 0, 200, 35))
-            my_font = pygame.font.SysFont('Comic Sans MS', 30)
-            text_surface = my_font.render('Счёт: ' + str(self.max_h), False, (30, 30, 30))
-            win.blit(text_surface, (0, 0))
-
-            if row_pl - (len(self.field[0]) - 28) > 10:
-                self.max_h += 1
+            win.blit(self.player_img, self.coor_player)
+            pygame.display.update()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -61,8 +56,8 @@ class tetge():
                         # pygame.display.update()
                         print("высота сейчас", self.max_h)
             if self.field[(self.coor_player[0]+1) // 24][row_pl] != 0 or self.field[(self.coor_player[0]+15) // 24][row_pl] != 0:  # если достигает блока сверху, то сразу опускается вниз
-                height_jump = 48
-            if self.now_jump and height_jump < 48 and self.field[col_pl][row_pl] == 0 and \
+                height_jump = max_jump
+            if self.now_jump and height_jump < max_jump and self.field[col_pl][row_pl] == 0 and \
                     self.field[(self.coor_player[0] + size_pl[0] - 2) // 24][row_pl] == 0:  # взлет прыжка
                 win.fill((0, 0, 0), (self.coor_player[0], self.coor_player[1], size_pl[0], size_pl[1]))
                 self.coor_player[1] -= 1
@@ -104,15 +99,12 @@ class tetge():
                 thr_fall = threading.Thread(target=self.fall_blocks, args=(), name="fall_block")
                 thr_fall.start()
 
-            if self.max_h >= 12 and len(self.field[0]) - self.max_h <= 16:
-                up = len(self.field[0]) - self.max_h - 15
-                for k in range(up):
-                    for i in range(18):
-                        self.field[i].append([0])
 
-                for i in range(len(self.now_blocks)):
-                    self.now_blocks[i][4] += up
-                self.update_win()
+    def score(self):
+        my_font = pygame.font.SysFont('Comic Sans MS', 30)
+        win.fill((0, 0, 0), (0, 0, 170, 35))
+        text_surface = my_font.render('Счёт: ' + str(self.max_h), False, (242, 243, 244))
+        win.blit(text_surface, (0, 0))
 
     def update_win(self):
         """при смене уровня карты, перерисовывает все окно"""
@@ -125,13 +117,13 @@ class tetge():
                 if self.field[x][y] == 1:
                     win.blit(color_block, (x * 24, y_win * 24))
                     pygame.display.update()
-                elif self.field[x][y] == 2:
-                    win.blit(pygame.image.load('img/cube_blue.png'), (x * 24, y_win * 24))
-                    pygame.display.update()
-
-        self.coor_player[1] += 24  # смещаем персонажа на 1 блок
-        win.blit(self.player_img, self.coor_player)
-        pygame.display.update()
+                # elif self.field[x][y] == 2:
+                #     win.blit(pygame.image.load('img/cube_blue.png'), (x * 24, y_win * 24))
+                #     pygame.display.update()
+        # win.blit(self.player_img, self.coor_player)
+        # self.coor_player[1] += 24  # смещаем персонажа на 1 блок вниз
+        # win.blit(self.player_img, self.coor_player)
+        # pygame.display.update()
 
     def fall_blocks(self):
         """вызываем перерисовку для всех блоков находящихся в падении"""
@@ -186,24 +178,41 @@ class tetge():
                     if b == 1:
                         self.field[place + x][y + i] = 1
                         win.blit(color_block, ((place + x) * 24, (y_win - i) * 24))
-
-                        # if self.coor_player[1]+17>=(y_win - i) * 24 and ((self.coor_player[0]>=(y_win - i) * 24 and self.coor_player[0]<=(y_win - i)+23) or (self.coor_player[0]+16>=(y_win - i) * 24 and self.coor_player[0]+16<=(y_win - i)+23)):
-                        #     print('вы проиграли! Ваша максимальная высота: ~', self.max_h)
-                        # if len(self.field[0]) - (self.coor_player[1] + 20) // 24 - 5 == y_win - i:
-                        #     print('сравнить: ', self.coor_player[0] // 24, place + x, (place + x) * 24, 'and', len(self.field[0]) - (self.coor_player[1] + 20) // 24 - 5, y_win - i)
                         if ((self.coor_player[0]+1) // 24 == place + x or (self.coor_player[0] + 15) // 24 == place + x) and len(self.field[0]) - (self.coor_player[1] + 20) // 24 - 5 ==y + i:
-                            print('вы проиграли! Ваша максимальная высота: ~', self.max_h)
+                            print('вы проиграли! Ваша максимальная высота:', self.max_h)
+                            self.score()
                             pygame.quit()
-                            # col_pl = self.coor_player[0] // 24  # X персонажа
-                            # row_pl = len(self.field[0]) - self.coor_player[1] // 24 - 5  # Y персонажа
+
             pygame.display.update()
             self.now_blocks[self.i] = [block, stop_h, place, y, y_win]
         else:
             try:
                 self.now_blocks.remove([block, stop_h, place, y, y_win])
             except ValueError:
-
                 pass
+
+
+        row_pl = len(self.field[0]) - self.coor_player[1] // 24 - 5  # Y персонажа
+        self.max_h = max(self.max_h, row_pl)
+
+        if row_pl - (len(self.field[0]) - 28) > 10:
+            self.max_h += 1
+
+        if self.max_h >= 12 and len(self.field[0]) - self.max_h <= 16:
+            up = len(self.field[0]) - self.max_h - 15
+
+            for k in range(up):
+                for i in range(18):
+                    self.field[i].append([0])
+            # for _ in range(up):
+                for i in range(len(self.now_blocks)):
+                    self.now_blocks[i][4] += 1
+                self.update_win()
+                win.fill((0, 0, 0), (self.coor_player[0], self.coor_player[1], 17,20))
+                self.coor_player[1] += 24
+                win.blit(self.player_img, (self.coor_player[0], self.coor_player[1]))
+                pygame.display.update()
+
 
 if __name__ == "__main__":
     pygame.init()
