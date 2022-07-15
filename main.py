@@ -1,5 +1,6 @@
 # tetge - tetris + dodge
 import os
+import random
 import threading
 import time
 from random import randint
@@ -19,7 +20,6 @@ class tetge():
         self.now_jump = False
         height_jump = 55
         max_jump = 55
-        down = False
         size_pl = [17, 20]  # размер персонажа в пикселях
         pygame.font.init()
         self.stop = False
@@ -92,7 +92,7 @@ class tetge():
                 pygame.display.update()
 
             if len(self.now_blocks) < 1:
-                self.generation_field()
+                self.new_generation_field()
 
             if not self.now_animation:  # обрабатываем анимацию падения блоков в отдельном потоке
                 self.now_animation = True
@@ -145,6 +145,31 @@ class tetge():
                     if len(block) + i > 17:  # если блок заходит за пределы карты, смещаем место падения
                         return i - ((len(block) + i) - 18)
                     return i
+
+
+    def new_generation_field(self):
+        block = self.blocks[randint(0, len(self.blocks) - 1)]  # блок, который будет падать
+        max_x = 18 - len(block)
+        x_info = [0, 1000, 1000] # x, space, высота остановки
+        for x in range(0, max_x+1):
+            now_space = 0
+            maximum_h = self.height[x] + 23
+            before = maximum_h + 1
+            for i, b in enumerate(block):
+                if maximum_h + b.count(0) - self.height[x + i] <= before:
+                    before = maximum_h + b.count(0) - self.height[x + i]
+                    stop_h = self.height[x + i] - b.count(0)  # высота, на которой остановиться блок после падении
+            for i in range(0, len(block)):
+                now_space += (stop_h + block[i].count(0) - self.height[x+i])
+            if now_space < x_info[1] or (now_space == x_info[1] and stop_h<x_info[2]):
+                x_info[2] = stop_h
+                x_info[1] = now_space
+                x_info[0] = x
+        for i in range(len(block)):
+            self.height[x_info[0] + i] = x_info[2] + len(block[i])  # пересчитываем высоту после падения блока
+        print(x_info)
+        self.now_blocks.append([block, x_info[2], x_info[0], len(self.field[0]) - 5, 0])
+
 
     def generation_field(self):
         """генерирует блок и место, где остановится блок"""
