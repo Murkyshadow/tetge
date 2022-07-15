@@ -9,10 +9,14 @@ import pygame
 
 class tetge():
     def __init__(self):
-        self.blocks = [[[1, 1], [1, 1]], [[1, 1], [1], [1]], [[1], [1, 1, 1]], [[1, 1, 1], [0, 0, 1]],
+        self.blocks1 = [[[1, 1], [1, 1]], [[1, 1], [1], [1]], [[1], [1, 1, 1]], [[1, 1, 1], [0, 0, 1]],
                        [[0, 1], [0, 1], [1, 1]], [[1, 1, 1], [0, 1]], [[1], [1, 1], [1]], [[0, 1], [1, 1, 1]],
                        [[0, 1], [1, 1], [0, 1]], [[1], [1], [1], [1]], [[1, 1, 1, 1]], [[1, 1], [0, 1], [0, 1]],
                        [[0, 0, 1], [1, 1, 1]], [[1, 1, 1], [1]], [[1], [1], [1, 1]]]  # записаны столбики каждого блока
+        self.blocks = [[[1, 1], [1, 1]], [[1, 1], [1, 0], [1, 0]], [[1, 0, 0], [1, 1, 1]], [[1, 1, 1], [0, 0, 1]],
+                       [[0, 1], [0, 1], [1, 1]], [[1, 1, 1], [0, 1, 0]], [[1, 0], [1, 1], [1, 0]], [[0, 1, 0], [1, 1, 1]],
+                       [[0, 1], [1, 1], [0, 1]], [[1], [1], [1], [1]], [[1, 1, 1, 1]], [[1, 1], [0, 1], [0, 1]],
+                       [[0, 0, 1], [1, 1, 1]], [[1, 1, 1], [1, 0, 0]], [[1, 0], [1, 0], [1, 1]]]
         self.max_h = 0  # значение максимальной достигнутой высоты персонажем               высота верхнего слоя, изменяется при изменении максимальной достигнутой высоты
         self.field = []  # поле 24 на 18
         self.now_blocks = []  # блоки в падении
@@ -25,7 +29,8 @@ class tetge():
         self.stop = False
 
         self.coor_player = [192, 552]
-        self.player_img = pygame.image.load('img/player.png')  # выведим игрока
+        self.player_img = pygame.image.load('img/918.png')  # выведим игрока
+        self.player_img = pygame.transform.scale(self.player_img, (size_pl[0], size_pl[1])) # подгоняем размеры
 
         for i in range(18):
             self.field.append([0] * 28)  # одновременно видно будет только 24 клетки (вверх) и 18 клеток в ширину
@@ -149,26 +154,50 @@ class tetge():
 
     def new_generation_field(self):
         block = self.blocks[randint(0, len(self.blocks) - 1)]  # блок, который будет падать
-        max_x = 18 - len(block)
+        self.now_block = block
         x_info = [0, 1000, 1000] # x, space, высота остановки
-        for x in range(0, max_x+1):
-            now_space = 0
-            maximum_h = self.height[x] + 23
-            before = maximum_h + 1
-            for i, b in enumerate(block):
-                if maximum_h + b.count(0) - self.height[x + i] <= before:
-                    before = maximum_h + b.count(0) - self.height[x + i]
-                    stop_h = self.height[x + i] - b.count(0)  # высота, на которой остановиться блок после падении
-            for i in range(0, len(block)):
-                now_space += (stop_h + block[i].count(0) - self.height[x+i])
-            if now_space < x_info[1] or (now_space == x_info[1] and stop_h<x_info[2]):
-                x_info[2] = stop_h
-                x_info[1] = now_space
-                x_info[0] = x
-        for i in range(len(block)):
-            self.height[x_info[0] + i] = x_info[2] + len(block[i])  # пересчитываем высоту после падения блока
+        for rt in range(4):
+            block = self.rotate_block(self.now_block, rt)
+            max_x = 18 - len(block)
+
+            for x in range(0, max_x+1):
+                now_space = 0
+                maximum_h = self.height[x] + 23
+                before = maximum_h + 1
+                for i, b in enumerate(block):
+                    if maximum_h + b.count(0) - self.height[x + i] <= before:
+                        before = maximum_h + b.count(0) - self.height[x + i]
+                        stop_h = self.height[x + i] - b.count(0)  # высота, на которой остановиться блок после падении
+                for i in range(0, len(block)):
+                    now_space += (stop_h + block[i].count(0) - self.height[x+i])
+                if now_space < x_info[1] or (now_space == x_info[1] and stop_h<x_info[2]):
+                    x_info[2] = stop_h
+                    x_info[1] = now_space
+                    x_info[0] = x
+                    now_block = block
+        for i in range(len(now_block)):
+            self.height[x_info[0] + i] = x_info[2] + len(now_block[i])  # пересчитываем высоту после падения блока
         print(x_info)
-        self.now_blocks.append([block, x_info[2], x_info[0], len(self.field[0]) - 5, 0])
+        self.now_blocks.append([now_block, x_info[2], x_info[0], len(self.field[0]) - 5, 0])
+
+    def rotate_block(self, block, rt):
+        rotated = block
+        for r in range(rt+1):
+            rotated = list(zip(*rotated))[::-1]
+        rotated = [list(i) for i in rotated]
+        for y, yb in enumerate(rotated):
+            for x, b in enumerate(yb):
+                if b == 1 and x < len(yb)-1:
+                    for i in range(x, len(yb)-1):
+                        if rotated[y][i+1] == 1:
+                            break
+                    else:
+                        for i in range(x, len(yb) - 1):
+                            rotated[y].pop(x + 1)
+
+
+        return rotated
+
 
 
     def generation_field(self):
