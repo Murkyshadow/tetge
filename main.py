@@ -1,11 +1,82 @@
 # tetge - tetris + dodge
 import os
 import random
+import sys
 import threading
 import time
 from random import randint
 import pygame
+from PyQt5.QtWidgets import QFileDialog, QWidget
 
+
+class Button():
+    def __init__(self, color, x, y, width, height, text=''):
+        self.color = color
+        self.ogcol = color
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.text = text
+
+    def draw(self, ui, outline=None):
+        # Call this method to draw the button on the screen
+        if outline:
+            pygame.draw.rect(ui, outline, (self.x - 2, self.y - 2, self.width + 4, self.height + 4), 0)
+
+        pygame.draw.rect(ui, self.color, (self.x, self.y, self.width, self.height), 0)
+
+        if self.text != '':
+            font = pygame.font.SysFont('Arial', 24)
+            text = font.render(self.text, 1, (0, 0, 0))
+            ui.blit(text, (
+            self.x + (self.width / 2 - text.get_width() / 2), self.y + (self.height / 2 - text.get_height() / 2)))
+
+    def isOver(self, pos):
+        global STATE
+        # Pos is the mouse position or a tuple of (x,y) coordinates
+        if pos[0] > self.x and pos[0] < self.x + self.width:
+            if pos[1] > self.y and pos[1] < self.y + self.height:
+                self.color = (128, 128, 128)
+            else:
+                self.color = self.ogcol
+        else:
+            self.color = self.ogcol
+
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if pos[0] > self.x and pos[0] < self.x + self.width:
+                    if pos[1] > self.y and pos[1] < self.y + self.height:
+                        return True
+
+class MainMenu(QWidget):
+    def __init__(self):
+        super().__init__()
+        btn_start = Button((100,100,100),150,100,150,50,text="Начать")
+        btn_start.draw(win)
+        btn_character = Button((100,100,100),150,200,150,50,text="Персонаж")
+        btn_character.draw(win)
+        btn_exit = Button((100,100,100),150,300,150,50,text="Выйти")
+        btn_exit.draw(win)
+        pygame.display.update()
+        while True:
+            eve = pygame.mouse.get_pos()
+
+            if btn_start.isOver(eve):
+                tetge()
+
+            if btn_character.isOver(eve):
+                fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
+                                                          "All Files (*);;PNG (*.png);;JPG (*.jpg)")
+                img = pygame.image.load(fileName)  # выведим игрока
+                img = pygame.transform.scale(img, (50, 50))  # подгоняем размеры
+                img_pos = img.get_rect()
+                win.blit(img,img_pos)
+                pygame.display.update()
+
+            if btn_exit.isOver(eve):
+                pygame.quit()
+                sys.exit()
 
 class tetge():
     def __init__(self):
@@ -22,7 +93,7 @@ class tetge():
                        [[1, 1, 1, 1]],  # палка
                        [[0, 1, 1], [1, 1, 0]],  # зигзаг
                        [[1, 1, 0], [0, 1, 1]]]  # зигзаг другой
-
+        win.fill((0, 0, 0))
         self.max_h = 0  # значение максимальной достигнутой высоты персонажем
         self.field = []  # поле 24 на 18
         self.now_blocks = []  # блоки в падении
@@ -47,7 +118,6 @@ class tetge():
             row_pl = len(self.field[0]) - self.coor_player[1] // 24 - 5  # Y персонажа
             pygame.time.delay(5)
             self.score()
-
             win.blit(self.player_img, self.coor_player)
             pygame.display.update()
 
@@ -274,4 +344,4 @@ class tetge():
 if __name__ == "__main__":
     pygame.init()
     win = pygame.display.set_mode((24 * 18, 24 * 24))
-    game = tetge()
+    game = MainMenu()
