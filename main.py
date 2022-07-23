@@ -5,6 +5,7 @@ import threading
 import time
 from random import randint
 import pygame
+import pygame.mixer
 
 
 class tetge():
@@ -16,6 +17,7 @@ class tetge():
         self.isjump = False
 
         pygame.font.init()
+        # pygame.mixer.init()
         self.setting()
 
         for i in range(self.field_size[0]//self.size_block):
@@ -26,11 +28,9 @@ class tetge():
         self.isjump = False   # сейчас игрок не в прыжке
         self.isfall = False
         self.jump_speed = 1
-        # height_jump = 55
-        # max_jump = 55
-        # jumpCount = 10
         t = 0       # замедление после появления нового падующего блока
         max_block = 1   # кол-во одновременно падующих блоков
+        pygame.mixer.music.play(-1)
 
         while 1:
             # col_pl = self.coor_player[0] // 24  # X персонажа
@@ -166,6 +166,7 @@ class tetge():
         self.player_img = pygame.image.load('img/player.png')      # выведим игрока
         self.player_img = pygame.transform.scale(self.player_img, (self.size_pl[0], self.size_pl[1]))  # подгоняем размеры персонажа
 
+        pygame.mixer.music.load("music/game.mp3")   # музыка при запуске игры
 
     def score(self):
         my_font = pygame.font.SysFont('Comic Sans MS', 30)
@@ -175,7 +176,10 @@ class tetge():
 
     def update_win(self):
         """при смене уровня карты, перерисовывает все окно"""
-        red_block = pygame.image.load('img/cube_red.png')  # блок 24 на 24 пикселя
+        red_block = pygame.image.load('img/cube1.png')  # блок 24 на 24 пикселя
+        blue_block = pygame.image.load('img/cube2.png')  # блок 24 на 24 пикселя
+        green_block = pygame.image.load('img/cube3.png')  # блок 24 на 24 пикселя
+        pink_block = pygame.image.load('img/cube4.png')  # блок 24 на 24 пикселя
         win.fill((0, 0, 0))
         y_win = 24
         for y in range(len(self.field[0]) - 28, len(self.field[0]) - 4):
@@ -183,10 +187,14 @@ class tetge():
             for x in range(len(self.field)):
                 if self.field[x][y] == 1:
                     win.blit(red_block, (x * 24, y_win * 24))
+                elif self.field[x][y] == 2:
+                    win.blit(blue_block, (x * 24, y_win * 24))
+                elif self.field[x][y] == 3:
+                    win.blit(green_block, (x * 24, y_win * 24))
+                elif self.field[x][y] == 4:
+                    win.blit(pink_block, (x * 24, y_win * 24))
         pygame.display.update()
-                # elif self.field[x][y] == 2:
-                #     win.blit(pygame.image.load('img/cube_blue.png'), (x * 24, y_win * 24))
-                #     pygame.display.update()
+
         # win.blit(self.player_img, self.coor_player)
         # self.coor_player[1] += 24  # смещаем персонажа на 1 блок вниз
         # win.blit(self.player_img, self.coor_player)
@@ -195,7 +203,7 @@ class tetge():
     def fall_blocks(self):
         """вызываем перерисовку для всех блоков находящихся в падении"""
         for self.i, n_b in enumerate(self.now_blocks, 0):
-            self.fall(n_b[0], n_b[1], n_b[2], n_b[3], n_b[4])
+            self.fall(n_b[0], n_b[1], n_b[2], n_b[3], n_b[4], n_b[5])
         time.sleep(self.block_drop_time)
         self.now_animation = False
 
@@ -238,7 +246,8 @@ class tetge():
         for i in range(len(now_block)):
             self.height[x_info[0] + i] = x_info[2] + len(now_block[i])  # пересчитываем высоту после падения блока
         # print(x_info)
-        self.now_blocks.append([now_block, x_info[2], x_info[0], len(self.field[0]) - 5, 0])
+        color = randint(1, 4)
+        self.now_blocks.append([now_block, x_info[2], x_info[0], len(self.field[0]) - 5, 0, color])
 
     def rotate_block(self, block, rt):
         rotated = block
@@ -270,35 +279,33 @@ class tetge():
                 stop_h = self.height[place + i] - b.count(0)  # высота, на которой остановиться блок после падении
         for i in range(len(block)):
             self.height[place + i] = stop_h + len(block[i])  # пересчитываем высоту после падения блока
-        self.now_blocks.append([block, stop_h, place, len(self.field[0]) - 5, 0])
+        color = randint(1, 4)
+        self.now_blocks.append([block, stop_h, place, len(self.field[0]) - 5, 0, color])
 
-    def fall(self, block, stop_h, place, y, y_win):
+    def fall(self, block, stop_h, place, y, y_win, color):
         """анимация падения блока"""
-        color_block = pygame.image.load('img/cube_red.png')  # блок 24 на 24 пикселя
+        color_block = pygame.image.load(f'img/cube{color}.png')  # блок 24 на 24 пикселя
 
         if y > stop_h:
             for x in range(len(block)):
                 for i, b in enumerate(block[x]):  # стираем поле, где был блок
-                    if b == 1:
+                    if b == 1 or b == 2 or b == 3 or b == 4:
                         self.field[place + x][y + i] = 0
                         win.fill((0, 0, 0), ((place + x) * 24, (y_win - i) * 24, 24, 24))
             y -= 1
             y_win += 1
             for x in range(len(block)):  # заполняем поле блоком в текущем y
                 for i, b in enumerate(block[x], 0):
-                    if b == 1:
-                        self.field[place + x][y + i] = 1
+                    if b == 1 or b == 2 or b == 3 or b == 4:
+                        self.field[place + x][y + i] = color
                         win.blit(color_block, ((place + x) * 24, (y_win - i) * 24))
-                        if ((self.coor_player[0] + 1) // 24 == place + x or (self.coor_player[0] + 15) // 24 == place + x) and len(self.field[0]) - (self.coor_player[1] + 20) // 24 - 5 == y + i:
-                            print('вы проиграли!')
-                            self.score()
-                            pygame.quit()
+                        self.death(place, x, y, i)
 
             pygame.display.update()
-            self.now_blocks[self.i] = [block, stop_h, place, y, y_win]
+            self.now_blocks[self.i] = [block, stop_h, place, y, y_win, self.now_blocks[self.i][5]]
         else:
             try:
-                self.now_blocks.remove([block, stop_h, place, y, y_win])
+                self.now_blocks.remove([block, stop_h, place, y, y_win, self.now_blocks[self.i][5]])
             except ValueError:
                 pass
 
@@ -314,7 +321,6 @@ class tetge():
             for k in range(up):
                 for i in range(18):
                     self.field[i].append([0])
-                # for _ in range(up):
                 for i in range(len(self.now_blocks)):
                     self.now_blocks[i][4] += 1
                 self.update_win()
@@ -322,6 +328,12 @@ class tetge():
                 self.coor_player[1] += 24
                 win.blit(self.player_img, (self.coor_player[0], self.coor_player[1]))
                 pygame.display.update()
+
+    def death(self, place, x, y, i):
+        if ((self.coor_player[0] + 1) // self.size_block == place + x or (self.coor_player[0] + 15) // 24 == place + x) and len(self.field[0]) - (self.coor_player[1] + 20) // 24 - 5 == y + i:
+            print('вы проиграли!')
+            self.score()
+            pygame.quit()
 
 
 if __name__ == "__main__":
