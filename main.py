@@ -10,6 +10,7 @@ import pygame.mixer
 
 class tetge():
     def reset(self):
+        win.fill((0, 0, 0))
         self.max_h = 0  # значение максимальной достигнутой высоты персонажем
         self.field = []  # поле 24 на 18
         self.now_blocks = []  # блоки в падении
@@ -17,7 +18,6 @@ class tetge():
         self.isjump = False
         self.play = True
 
-        pygame.font.init()
         # pygame.mixer.init()
         self.setting()
 
@@ -34,7 +34,10 @@ class tetge():
         pygame.mixer.music.play(-1)
 
     def __init__(self):
+        pygame.font.init()
+        self.font()
         self.reset()
+        self.main_menu()
 
         while 1:
             if not self.play:
@@ -44,8 +47,8 @@ class tetge():
             pygame.time.delay(self.speed_game)
             self.score()
 
-            win.blit(self.player_img, self.coor_player)
-            pygame.display.update()
+            # win.blit(self.player_img, self.coor_player)
+            # pygame.display.update()
 
             for event in pygame.event.get(): # пауза на C
                 if event.type == pygame.KEYDOWN:
@@ -59,9 +62,9 @@ class tetge():
 
             self.move()
             if self.block_drop_time > 0.035:
-                self.block_drop_time = self.block_drop_time_start - self.max_h/3000 + self.t
+                self.block_drop_time = self.block_drop_time_start - self.max_h/2200 + self.t
             else:
-                self.t += 0.006
+                self.t += 0.008
                 self.block_drop_time += self.t
                 self.max_block += 1
 
@@ -69,10 +72,15 @@ class tetge():
                 self.new_generation_field()
 
             if not self.now_animation:  # обрабатываем анимацию падения блоков в отдельном потоке
-                #print(self.block_drop_time)
+                # print(self.block_drop_time)
                 self.now_animation = True
                 thr_fall = threading.Thread(target=self.fall_blocks, args=(), name="fall_block")
                 thr_fall.start()
+
+    def font(self):
+        self.score_title = pygame.font.Font("./fonts/SUBWT___.ttf", 32)
+        self.menu_font = pygame.font.Font("./fonts/SUBWT___.ttf", 28)
+        self.game_title = pygame.font.Font("./fonts/Blox2.ttf", 98)
 
     def move(self):
         """передвижение игрока"""
@@ -96,9 +104,11 @@ class tetge():
             if self.coor_player[0]-self.speed < 0: # стенка слева
                 self.coor_player[0] = 0
             elif self.field[(self.coor_player[0]-self.speed)//self.size_block][len(self.field[0])-self.coor_player[1]//self.size_block-5] not in self.permeable_blocks or self.field[(self.coor_player[0]-self.speed)//self.size_block][len(self.field[0])-(self.coor_player[1]+self.size_pl[1])//self.size_block-5] not in self.permeable_blocks:       # блок справа снизу и справа сверху,  если есть, то передвигаемся вплотную к нему
+                # if pygame.key.get_pressed()[pygame.K_UP]:
                 if pygame.key.get_pressed()[pygame.K_UP]:
                     self.isjump = True
                     self.jump_speed = 2
+                # self.jump_speed = 2
                 while (self.field[(self.coor_player[0]-1)//self.size_block][len(self.field[0])-self.coor_player[1]//self.size_block-5] in self.permeable_blocks) and self.field[(self.coor_player[0]-1)//self.size_block][len(self.field[0])-(self.coor_player[1]+self.size_pl[1])//self.size_block-5] in self.permeable_blocks:
                     self.coor_player[0]-=1
             else:       # стенки и блока справа нет
@@ -140,6 +150,8 @@ class tetge():
 
     def setting(self):
         """настройки игры"""
+        pygame.font.init()
+
         self.blocks_old = [[[1, 1], [1, 1]], [[1, 1], [1], [1]], [[1], [1, 1, 1]], [[1, 1, 1], [0, 0, 1]],
                            [[0, 1], [0, 1], [1, 1]], [[1, 1, 1], [0, 1]], [[1], [1, 1], [1]], [[0, 1], [1, 1, 1]],
                            [[0, 1], [1, 1], [0, 1]], [[1], [1], [1], [1]], [[1, 1, 1, 1]], [[1, 1], [0, 1], [0, 1]],
@@ -162,19 +174,96 @@ class tetge():
         self.block_drop_time = 0.045  # время за которое падующий блок преодалевает 1 блок
         self.block_drop_time_start = 0.045
 
-
         self.field_size = [24 * 18, 24 * 24]  # размер поля в пикселях
         self.coor_player = [192, self.field_size[1]-self.size_pl[1]-2]   # начальные координаты игрока
         self.player_img = pygame.image.load('img/player.png')      # выведим игрока
         self.player_img = pygame.transform.scale(self.player_img, (self.size_pl[0], self.size_pl[1]))  # подгоняем размеры персонажа
 
+        # self.back = pygame.image.load('img/black.png')
+        # self.background.set_alpha(200)
         pygame.mixer.music.load("music/game.mp3")   # музыка при запуске игры
 
-    def score(self):
-        my_font = pygame.font.SysFont('Comic Sans MS', 30)
+        # self.score_title = pygame.font.Font("./fonts/SUBWT___.ttf", 32)
+        # self.menu_font = pygame.font.Font("./fonts/SUBWT___.ttf", 28)
+        # self.game_title = pygame.font.Font("./fonts/Blox2.ttf", 98)
+
+
+    def main_menu(self):
+        pygame.mixer.music.load("music/menu.mp3")
+        pygame.mixer.music.play(-1)
+
+        s = 52
+        w = 20
+        y = self.field_size[1]//5
         win.fill((0, 0, 0), (0, 0, 170, 35))
-        text_surface = my_font.render('Счёт: ' + str(self.max_h), False, (242, 243, 244))
+        pygame.font.init()
+        text = self.game_title.render('T', False, (80, 41, 255))
+        win.blit(text, (self.field_size[0]//2-2*s-w, y))
+        win.blit(text, (self.field_size[0]//2-w, y))
+        text = self.game_title.render('E', False, (255, 30, 0))
+        win.blit(text, (self.field_size[0]//2-s-w, y))
+        text = self.game_title.render('G', False, (59, 255, 0))
+        win.blit(text, (self.field_size[0]//2+s*1-w, y))
+        text = self.game_title.render('E', False, (196, 0, 255))
+        win.blit(text, (self.field_size[0] // 2 + s * 2-w, y))
+
+        w = 20
+        h = 50
+        y = self.field_size[1]//2
+
+        text = self.menu_font.render('Start', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 5+w, y))
+        text = self.menu_font.render('Scores', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 5 + w, y+h))
+        text = self.menu_font.render('Exit', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 5 + w, y+h*2))
+
+        w -= 30
+        text = self.menu_font.render('>', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 5+w, y))
+
+        pygame.display.update()
+
+        choice = 0
+        while 1:
+            for event in pygame.event.get(): # пауза на C
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_c:
+                        if pygame.mixer.music.get_busy():
+                            pygame.mixer.music.pause()
+                        else:
+                            pygame.mixer.music.unpause()
+                    if event.key == pygame.K_UP:
+                        win.fill((0, 0, 0), (self.field_size[0] // 5+w, y+h*choice, 16, 32))  # стираем
+                        if choice == 0:
+                            choice = 2
+                        else:
+                            choice -= 1
+                        win.blit(text, (self.field_size[0] // 5 + w, y+h*choice))
+                        pygame.display.update()
+                    if event.key == pygame.K_DOWN:
+                        win.fill((0, 0, 0), (self.field_size[0] // 5+w, y+h*choice, 16, 32))  # стираем
+                        if choice == 2:
+                            choice = 0
+                        else:
+                            choice += 1
+                        win.blit(text, (self.field_size[0] // 5 + w, y+h*choice))
+                        pygame.display.update()
+                    if event.key == pygame.K_RETURN:
+                        if choice == 0:     # cтарт
+                            self.reset()
+                            return
+                        elif choice == 1:
+                            pass
+                        else:
+                            pygame.quit()
+
+    def score(self):
+        pygame.font.init()
+        win.fill((0, 0, 0), (0, 0, 170, 35))
+        text_surface = self.score_title.render('Score: ' + str(self.max_h), False, (242, 243, 244))
         win.blit(text_surface, (0, 0))
+        pygame.display.update()
 
     def update_win(self):
         """при смене уровня карты, перерисовывает все окно"""
@@ -195,18 +284,16 @@ class tetge():
                     win.blit(green_block, (x * 24, y_win * 24))
                 elif self.field[x][y] == 4:
                     win.blit(pink_block, (x * 24, y_win * 24))
-        pygame.display.update()
-
-        # win.blit(self.player_img, self.coor_player)
-        # self.coor_player[1] += 24  # смещаем персонажа на 1 блок вниз
-        # win.blit(self.player_img, self.coor_player)
         # pygame.display.update()
+        pygame.display.update()
 
     def fall_blocks(self):
         """вызываем перерисовку для всех блоков находящихся в падении"""
         for self.i, n_b in enumerate(self.now_blocks, 0):
             if self.fall(n_b[0], n_b[1], n_b[2], n_b[3], n_b[4], n_b[5]):
                 return
+        pygame.display.update()
+
         time.sleep(self.block_drop_time)
         self.now_animation = False
 
@@ -306,7 +393,7 @@ class tetge():
                             self.reset()
                             return True
 
-            pygame.display.update()
+            # pygame.display.update()
             self.now_blocks[self.i] = [block, stop_h, place, y, y_win, self.now_blocks[self.i][5]]
         else:
             try:
@@ -338,16 +425,16 @@ class tetge():
         if ((self.coor_player[0] + 1) // self.size_block == place + x or (self.coor_player[0] + 15) // 24 == place + x) and len(self.field[0]) - (self.coor_player[1] + 20) // 24 - 5 == y + i:
             print('вы проиграли!')
             self.score()
-            w,h = pygame.display.get_surface().get_size()
-            pygame.draw.rect(win, (0,0,0), (0,0,w,h))
+            w, h = pygame.display.get_surface().get_size()
+            pygame.draw.rect(win, (0, 0, 0), (0, 0, w, h))
             pygame.display.update()
             f1 = pygame.font.Font(None, 36)
             text1 = f1.render('Вы проиграли!', True,
                               (180, 50, 50))
-            win.blit(text1, (w/3,h/2))
-            text1 = f1.render('   Счёт: '+str(self.max_h), True,
+            win.blit(text1, (w / 3, h / 2))
+            text1 = f1.render('   Счёт: ' + str(self.max_h), True,
                               (180, 50, 50))
-            win.blit(text1, (w/3,h/1.7))
+            win.blit(text1, (w / 3, h / 1.7))
             pygame.mixer.music.stop()
             pygame.display.update()
             self.now_animation = True
