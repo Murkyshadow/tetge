@@ -340,6 +340,7 @@ class tetge():
                             self.menu = False
                             self.menu2 = True
                             self.start_game_menu()
+
                         elif self.choice == 1:
                             pass
                         else:
