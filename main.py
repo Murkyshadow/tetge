@@ -15,11 +15,10 @@ class tetge():
         self.field = []  # поле 24 на 18
         self.now_blocks = []  # блоки в падении
         self.now_animation = False  # обозначает, что сейчас не происходит прорисовка падения блоков
+        self.setting()
         self.isjump = False
-        self.play = True
 
         # pygame.mixer.init()
-        self.setting()
 
         for i in range(self.field_size[0]//self.size_block):
             self.field.append([0] * (self.field_size[1]//self.size_block+4))  # одновременно видно будет только 24 клетки (вверх) и 18 клеток в ширину
@@ -32,6 +31,7 @@ class tetge():
         self.t = 0       # замедление после появления нового падующего блока
         self.max_block = 1  # кол-во одновременно падующих блоков
         pygame.mixer.music.play(-1)
+        self.play = True
 
     def __init__(self):
         pygame.font.init()
@@ -41,7 +41,7 @@ class tetge():
 
         while 1:
             if not self.play:
-                continue
+                self.death()
             # col_pl = self.coor_player[0] // 24  # X персонажа
             # row_pl = len(self.field[0]) - self.coor_player[1] // 24 - 5  # Y персонажа
             pygame.time.delay(self.speed_game)
@@ -389,10 +389,10 @@ class tetge():
                     if b == 1 or b == 2 or b == 3 or b == 4:
                         self.field[place + x][y + i] = color
                         win.blit(color_block, ((place + x) * 24, (y_win - i) * 24))
-                        if self.death(place, x, y, i):
-                            self.reset()
+                        if ((self.coor_player[0] + 1) // self.size_block == place + x or (self.coor_player[0] + 15) // 24 == place + x) and len(self.field[0]) - (self.coor_player[1] + 20) // 24 - 5 == y + i:
+                            self.play = False
+                            self.now_animation = True
                             return True
-
             # pygame.display.update()
             self.now_blocks[self.i] = [block, stop_h, place, y, y_win, self.now_blocks[self.i][5]]
         else:
@@ -421,27 +421,61 @@ class tetge():
                 win.blit(self.player_img, (self.coor_player[0], self.coor_player[1]))
                 pygame.display.update()
 
-    def death(self, place, x, y, i):
-        if ((self.coor_player[0] + 1) // self.size_block == place + x or (self.coor_player[0] + 15) // 24 == place + x) and len(self.field[0]) - (self.coor_player[1] + 20) // 24 - 5 == y + i:
-            print('вы проиграли!')
-            self.score()
-            w, h = pygame.display.get_surface().get_size()
-            pygame.draw.rect(win, (0, 0, 0), (0, 0, w, h))
-            pygame.display.update()
-            f1 = pygame.font.Font(None, 36)
-            text1 = f1.render('Вы проиграли!', True,
-                              (180, 50, 50))
-            win.blit(text1, (w / 3, h / 2))
-            text1 = f1.render('   Счёт: ' + str(self.max_h), True,
-                              (180, 50, 50))
-            win.blit(text1, (w / 3, h / 1.7))
-            pygame.mixer.music.stop()
-            pygame.display.update()
-            self.now_animation = True
-            self.play = False
-            time.sleep(3)
-            pygame.draw.rect(win, (0, 0, 0), (0, 0, w, h))
-            return True
+    def death(self):
+        print('вы проиграли!')
+        self.score()
+        w, h = pygame.display.get_surface().get_size()
+        pygame.draw.rect(win, (0, 0, 0), (0, 0, w, h))
+        pygame.display.update()
+        text1 = self.menu_font.render('FAIL!', True,
+                          (255, 255, 255))
+        win.blit(text1, (w / 3, h / 2 - 120))
+        text1 = self.menu_font.render('Score: ' + str(self.max_h), True,
+                          (255, 255, 255))
+        win.blit(text1, (w / 3, h / 2 - 80))
+        pygame.mixer.music.stop()
+        pygame.display.update()
+
+        w = 20
+        h = 50
+        y = self.field_size[1] // 2
+
+        text = self.menu_font.render('Retry', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 5 + w, y))
+        text = self.menu_font.render('Menu', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 5 + w, y + h))
+
+        w -= 30
+        text = self.menu_font.render('>', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 5 + w, y))
+
+        pygame.display.update()
+
+        choice = 0
+        while 1:
+            events = list(pygame.event.get())
+            for event in events:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        win.fill((0, 0, 0), (self.field_size[0] // 5 + w, y + h * choice, 16, 32))  # стираем
+                        if choice == 1:
+                            choice = 0
+                        win.blit(text, (self.field_size[0] // 5 + w, y + h * choice))
+                        pygame.display.update()
+                    if event.key == pygame.K_DOWN:
+                        win.fill((0, 0, 0), (self.field_size[0] // 5 + w, y + h * choice, 16, 32))  # стираем
+                        if choice == 0:
+                            choice = 1
+                        win.blit(text, (self.field_size[0] // 5 + w, y + h * choice))
+                        pygame.display.update()
+                    if event.key == pygame.K_RETURN:
+                        if choice == 0:  # cтарт
+                            self.reset()
+                            return True
+                        else:
+                            self.reset()
+                            self.main_menu()
+                            return True
 
 
 if __name__ == "__main__":
