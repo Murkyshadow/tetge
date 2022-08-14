@@ -65,9 +65,13 @@ class tetge():
             else:
                 self.t += 0.008
                 self.block_drop_time += self.t
-                self.max_block += 1
 
-            if len(self.now_blocks) < self.max_block:
+            if 24 - self.max_h//2 > 4:
+                intrv = 24 - self.max_h//2
+            else:
+                intrv = 4
+
+            if len(self.now_blocks) < self.max_block or self.now_blocks[-1][4] == intrv:
                 self.new_generation_field()
 
             if not self.now_animation:  # обрабатываем анимацию падения блоков в отдельном потоке
@@ -179,8 +183,11 @@ class tetge():
 
         self.field_size = [24 * 18, 24 * 24]  # размер поля в пикселях
         self.coor_player = [192, self.field_size[1]-self.size_pl[1]-2]   # начальные координаты игрока
-        self.player_img = pygame.image.load('img/player.png')      # выведим игрока
-        self.player_img = pygame.transform.scale(self.player_img, (self.size_pl[0], self.size_pl[1]))  # подгоняем размеры персонажа
+        mypath = './players'
+        self.skin_choice = 0
+        self.skins = [f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
+        # self.player_img = pygame.image.load(self.skins[self.skin_choice])      # выведим игрока
+        # self.player_img = pygame.transform.scale(self.player_img, (self.size_pl[0], self.size_pl[1]))  # подгоняем размеры персонажа
 
         self.background = pygame.image.load('img/black.png')
         self.background.set_alpha(100)
@@ -215,7 +222,18 @@ class tetge():
         win.blit(text, (self.field_size[0] // 10 + 2 * w, y + 7 * h))
 
         text = self.menu_font.render('>', False, (255, 255, 255))
-        win.blit(text, (self.field_size[0] // 10 + w, y + (3+self.choice) * h))
+        if self.choice == 0:
+            pygame.draw.rect(win, (0, 0, 0), (self.field_size[0] // 10 + w, y + (3 + self.choice) * h, 260, 40))
+            text = self.menu_font.render('<      >', False, (255, 255, 255))
+            win.blit(text, (self.field_size[0] // 10 + w, y + (3 + self.choice) * h))
+
+            plr = pygame.image.load('./players/'+self.skins[self.skin_choice])
+            self.player_img = pygame.transform.scale(plr, (self.size_pl[0], self.size_pl[1]))
+            plr = pygame.transform.scale(plr, (self.size_pl[0]*1.5, self.size_pl[1]*1.5))
+            prec = plr.get_rect(center=(self.field_size[0] // 10 + w + 43, y + (3 + self.choice) * h + 15))
+            win.blit(plr, prec)
+        else:
+            win.blit(text, (self.field_size[0] // 10 + w, y + (3+self.choice) * h))
 
         pygame.display.update()
 
@@ -251,8 +269,22 @@ class tetge():
                             self.choice += 1
                         # win.blit(text, (self.field_size[0] // 5 + w, y+h*self.choice))
                         self.draw_start_game_menu()
+
+                    if event.key == pygame.K_RIGHT:
+                        if self.choice == 0:
+                            self.skin_choice += 1
+                            if self.skin_choice == len(self.skins):
+                                self.skin_choice = 0
+                            print(self.skin_choice)
+                    if event.key == pygame.K_LEFT:
+                        if self.choice == 0:
+                            self.skin_choice -= 1
+                            if self.skin_choice < 0:
+                                self.skin_choice = len(self.skins)-1
+                            print(self.skin_choice)
                     if event.key == pygame.K_RETURN:
                         if self.choice == 0:    # скин
+                            print('skin')
                             pass
                         elif self.choice == 1:  # мод
                             pass
@@ -264,6 +296,7 @@ class tetge():
                         elif self.choice == 4:  # back
                             self.menu2 = False
                             self.main_menu()
+
 
 
     def draw_main_menu(self):
@@ -306,6 +339,7 @@ class tetge():
         self.menu = True
         self.block_drop_time_start = 0.07
         self.coor_player = [self.field_size[0]+100, self.field_size[1]+100]
+        self.skin_choice = 0
         self.choice = 0
         self.draw_main_menu()
         # text = self.menu_font.render('>', False, (255, 255, 255))
