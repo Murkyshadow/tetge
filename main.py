@@ -17,6 +17,7 @@ class tetge():
         self.now_animation = False  # обозначает, что сейчас не происходит прорисовка падения блоков
         self.isjump = False
 
+        # self.menu = True
         self.setting()
 
         # pygame.mixer.init()
@@ -32,9 +33,11 @@ class tetge():
         self.t = 0       # замедление после появления нового падующего блока
         self.max_block = 1  # кол-во одновременно падующих блоков
         self.play = True
-        pygame.mixer.music.play(-1)
+        if not self.menu:
+            pygame.mixer.music.play(-1)
 
     def __init__(self):
+        self.menu = True
         self.reset()
         self.main_menu()
 
@@ -335,6 +338,7 @@ class tetge():
         pygame.display.update()
 
     def main_menu(self):
+        self.scoreboard = False
         self.menu2 = False
         self.menu = True
         self.block_drop_time_start = 0.07
@@ -343,12 +347,12 @@ class tetge():
         self.choice = 0
         self.draw_main_menu()
         # text = self.menu_font.render('>', False, (255, 255, 255))
-        w = -10
-        h = 50
-        y = self.field_size[1] // 2
-
-        pygame.mixer.music.load("music/menu.mp3")
-        pygame.mixer.music.play(-1)
+        # w = -10
+        # h = 50
+        # y = self.field_size[1] // 2
+        if not pygame.mixer.music.get_busy():
+            pygame.mixer.music.load("music/menu.mp3")
+            pygame.mixer.music.play(-1)
 
         while self.menu:
             if not self.now_animation:
@@ -382,11 +386,15 @@ class tetge():
                             self.menu = False
                             self.menu2 = True
                             self.start_game_menu()
-
-                        elif self.choice == 1:
-                            pass
-                        else:
+                        elif self.choice == 1:  # scoreboard
+                            self.menu = False
+                            self.scoreboard = True
+                            self.start_scoreboard()
+                        else:           # exit
                             pygame.quit()
+
+    def start_scoreboard(self):
+        pass
 
     def score(self):
         # pygame.font.init()
@@ -425,6 +433,8 @@ class tetge():
             self.draw_main_menu()
         elif self.menu2:
             self.draw_start_game_menu()
+        elif self.scoreboard:
+            self.draw_scoreboard()
         else:
             pygame.display.update()
 
@@ -563,7 +573,7 @@ class tetge():
         pygame.display.update()
         text1 = self.gameover_title.render('GAME OVER!', True,
                           (255, 255, 255))
-        text_rect = text1.get_rect(center=(w/2,h/2-150))
+        text_rect = text1.get_rect(center=(w/2,h/2-180))
         win.blit(text1, text_rect)
         text1 = self.menu_font.render('Score: ' + str(self.max_h), True,
                           (255, 255, 255))
@@ -616,6 +626,7 @@ class tetge():
                             self.reset()
                             return True
                         else:
+                            self.menu = True
                             self.reset()
                             self.main_menu()
                             return True
