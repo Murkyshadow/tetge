@@ -84,7 +84,7 @@ class tetge():
             self.new_generation_field()
         self.count -= 1
         for f in self.field:
-            if f[21] == 0:
+            if f[22] == 0:
                 break
         else:
             self.update_win(0)
@@ -465,23 +465,21 @@ class tetge():
 
     def update_win(self, update=1):
         """при смене уровня карты, перерисовывает все окно"""
-        red_block = pygame.image.load('img/cube1.png')  # блок 24 на 24 пикселя
-        blue_block = pygame.image.load('img/cube2.png')  # блок 24 на 24 пикселя
-        green_block = pygame.image.load('img/cube3.png')  # блок 24 на 24 пикселя
-        pink_block = pygame.image.load('img/cube4.png')  # блок 24 на 24 пикселя
         win.fill((0, 0, 0))
         y_win = 24
         for y in range(len(self.field[0]) - 28, len(self.field[0]) - 4):
             y_win -= 1
             for x in range(len(self.field)):
+                # win.blit(self.color_blocks[self.field[x][y]-1], (x * 24, y_win * 24))
+
                 if self.field[x][y] == 1:
-                    win.blit(red_block, (x * 24, y_win * 24))
+                    win.blit(self.color_blocks[0], (x * 24, y_win * 24))
                 elif self.field[x][y] == 2:
-                    win.blit(blue_block, (x * 24, y_win * 24))
+                    win.blit(self.color_blocks[1], (x * 24, y_win * 24))
                 elif self.field[x][y] == 3:
-                    win.blit(green_block, (x * 24, y_win * 24))
+                    win.blit(self.color_blocks[2], (x * 24, y_win * 24))
                 elif self.field[x][y] == 4:
-                    win.blit(pink_block, (x * 24, y_win * 24))
+                    win.blit(self.color_blocks[3], (x * 24, y_win * 24))
         if not update:
             win.blit(self.background, (0, 0))
             win.blit(self.background, (0, 0))
@@ -581,7 +579,6 @@ class tetge():
 
     def fall(self, block, stop_h, place, y, y_win, color):
         """анимация падения блока"""
-        # color_block = pygame.image.load(f'img/cube{color}.png')  # блок 24 на 24 пикселя
 
         if y > stop_h:
             for x in range(len(block)):
