@@ -159,7 +159,6 @@ class tetge():
         win.blit(self.player_img, self.coor_player)
         pygame.display.update()
 
-
     def setting(self):
         """настройки игры"""
         pygame.font.init()
@@ -195,12 +194,15 @@ class tetge():
         # self.player_img = pygame.transform.scale(self.player_img, (self.size_pl[0], self.size_pl[1]))  # подгоняем размеры персонажа
 
         self.crown = pygame.image.load('img/crown.png')
-        self.crown = pygame.transform.scale(self.crown, (30, 24))  # подгоняем размеры персонажа
-
+        self.crown = pygame.transform.scale(self.crown, (30, 24))
         self.color_blocks = [pygame.image.load('img/cube1.png'), pygame.image.load('img/cube2.png'), pygame.image.load('img/cube3.png'), pygame.image.load('img/cube4.png')]
+        print('123')
+        icon = pygame.image.load('img/icon.png')
+        icon = pygame.transform.scale(icon, (64, 64))
+        pygame.display.set_icon(icon)
 
         self.background = pygame.image.load('img/black.png')
-        self.background.set_alpha(120)
+        self.background.set_alpha(120)          # полупрозрачный черный
         pygame.mixer.music.load("music/game.mp3")   # музыка при запуске игры
 
         self.gameover_title = pygame.font.Font("./fonts/failed attempt.ttf", 70)
