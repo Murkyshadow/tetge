@@ -19,10 +19,7 @@ class tetge():
         self.now_animation = False  # обозначает, что сейчас не происходит прорисовка падения блоков
         self.isjump = False
 
-        # self.menu = True
         self.setting()
-
-        # pygame.mixer.init()
 
         for i in range(self.field_size[0]//self.size_block):
             self.field.append([0] * (self.field_size[1]//self.size_block+4))  # одновременно видно будет только 24 клетки (вверх) и 18 клеток в ширину
@@ -47,13 +44,9 @@ class tetge():
         while 1:
             if not self.play:
                 self.death()
-            # col_pl = self.coor_player[0] // 24  # X персонажа
-            # row_pl = len(self.field[0]) - self.coor_player[1] // 24 - 5  # Y персонажа
+
             pygame.time.delay(self.speed_game)
             self.score()
-
-            # win.blit(self.player_img, self.coor_player)
-            # pygame.display.update()
 
             for event in pygame.event.get(): # пауза на C
                 if event.type == pygame.KEYDOWN:
@@ -86,14 +79,15 @@ class tetge():
                 thr_fall.start()
 
     def animation(self):
-        if len(self.now_blocks) < self.max_block:
+        if len(self.now_blocks) < self.max_block and self.count <= 0 or len(self.now_blocks) == 0:
+            self.count = 10
             self.new_generation_field()
-
+        self.count -= 1
         for f in self.field:
             if f[21] == 0:
                 break
         else:
-            self.update_win(1)
+            self.update_win(0)
 
         if not self.now_animation:  # обрабатываем анимацию падения блоков в отдельном потоке
             self.now_animation = True
@@ -204,7 +198,7 @@ class tetge():
         self.crown = pygame.transform.scale(self.crown, (30, 24))  # подгоняем размеры персонажа
 
         self.background = pygame.image.load('img/black.png')
-        self.background.set_alpha(100)
+        self.background.set_alpha(120)
         pygame.mixer.music.load("music/game.mp3")   # музыка при запуске игры
 
         self.gameover_title = pygame.font.Font("./fonts/failed attempt.ttf", 70)
@@ -240,7 +234,6 @@ class tetge():
 
         text = self.menu_font.render('>', False, (255, 255, 255))
         if self.choice == 0:
-            # pygame.draw.rect(win, (0, 0, 0), (self.field_size[0] // 10 + w, y + (3 + self.choice) * h, 260, 40))
             text = self.menu_font.render('<      >', False, (255, 255, 255))
             win.blit(text, (self.field_size[0] // 10 + w, y + (3 + self.choice) * h))
 
@@ -283,21 +276,17 @@ class tetge():
                             self.choice += 1.5
                         else:
                             self.choice += 1
-                        # win.blit(text, (self.field_size[0] // 5 + w, y+h*self.choice))
                         self.draw_start_game_menu()
 
-                    if event.key == pygame.K_RIGHT:
-                        if self.choice == 0:
+                    if self.choice == 0:
+                        if event.key == pygame.K_RIGHT:
                             self.skin_choice += 1
                             if self.skin_choice == len(self.skins):
                                 self.skin_choice = 0
-                            print(self.skin_choice)
-                    if event.key == pygame.K_LEFT:
-                        if self.choice == 0:
+                        if event.key == pygame.K_LEFT:
                             self.skin_choice -= 1
                             if self.skin_choice < 0:
                                 self.skin_choice = len(self.skins)-1
-                            print(self.skin_choice)
 
                     if event.key == pygame.K_RETURN:
                         if self.choice == 0:    # скин
@@ -350,10 +339,14 @@ class tetge():
         pygame.display.update()
 
     def main_menu(self):
+        self.play = False
         self.scoreboard = False
         self.menu2 = False
         self.menu = True
 
+
+        self.count = 0      # для двух падующих блоков в self.animation()
+        self.max_block = 2  # 2 падующих блока
         self.block_drop_time = 0.07
         self.coor_player = [self.field_size[0]+100, self.field_size[1]+100]     # чтобы персонажа не убило на заднем фоне
 
@@ -468,7 +461,7 @@ class tetge():
         win.blit(text_surface, (0, 0))
         # pygame.display.update()
 
-    def update_win(self, p=0):
+    def update_win(self, update=1):
         """при смене уровня карты, перерисовывает все окно"""
         red_block = pygame.image.load('img/cube1.png')  # блок 24 на 24 пикселя
         blue_block = pygame.image.load('img/cube2.png')  # блок 24 на 24 пикселя
@@ -487,9 +480,10 @@ class tetge():
                     win.blit(green_block, (x * 24, y_win * 24))
                 elif self.field[x][y] == 4:
                     win.blit(pink_block, (x * 24, y_win * 24))
-        if p:
+        if not update:
             win.blit(self.background, (0, 0))
             win.blit(self.background, (0, 0))
+        else:
             pygame.display.update()
 
     def fall_blocks(self):
@@ -592,7 +586,8 @@ class tetge():
                 for i, b in enumerate(block[x]):  # стираем поле, где был блок
                     if b == 1 or b == 2 or b == 3 or b == 4:
                         self.field[place + x][y + i] = 0
-                        win.fill((0, 0, 0), ((place + x) * 24, (y_win - i) * 24, 24, 24))
+                        if self.play:   # для следа в меню
+                            win.fill((0, 0, 0), ((place + x) * 24, (y_win - i) * 24, 24, 24))
             y -= 1
             y_win += 1
             for x in range(len(block)):  # заполняем поле блоком в текущем y
