@@ -197,6 +197,8 @@ class tetge():
         self.crown = pygame.image.load('img/crown.png')
         self.crown = pygame.transform.scale(self.crown, (30, 24))  # подгоняем размеры персонажа
 
+        self.color_blocks = [pygame.image.load('img/cube1.png'), pygame.image.load('img/cube2.png'), pygame.image.load('img/cube3.png'), pygame.image.load('img/cube4.png')]
+
         self.background = pygame.image.load('img/black.png')
         self.background.set_alpha(120)
         pygame.mixer.music.load("music/game.mp3")   # музыка при запуске игры
@@ -579,7 +581,7 @@ class tetge():
 
     def fall(self, block, stop_h, place, y, y_win, color):
         """анимация падения блока"""
-        color_block = pygame.image.load(f'img/cube{color}.png')  # блок 24 на 24 пикселя
+        # color_block = pygame.image.load(f'img/cube{color}.png')  # блок 24 на 24 пикселя
 
         if y > stop_h:
             for x in range(len(block)):
@@ -594,7 +596,7 @@ class tetge():
                 for i, b in enumerate(block[x], 0):
                     if b == 1 or b == 2 or b == 3 or b == 4:
                         self.field[place + x][y + i] = color
-                        win.blit(color_block, ((place + x) * 24, (y_win - i) * 24))
+                        win.blit(self.color_blocks[color-1], ((place + x) * 24, (y_win - i) * 24))
                         if ((self.coor_player[0] + 1) // self.size_block == place + x or (self.coor_player[0] + 15) // 24 == place + x) and len(self.field[0]) - (self.coor_player[1] + 20) // 24 - 5 == y + i:
                             self.play = False
                             self.now_animation = True
@@ -710,6 +712,7 @@ class tetge():
         self.cur.close()
 
 if __name__ == "__main__":
+
     pygame.init()
     win = pygame.display.set_mode((24 * 18, 24 * 24))
     game = tetge()
