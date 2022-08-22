@@ -29,6 +29,8 @@ class tetge():
         self.isjump = False   # сейчас игрок не в прыжке
         self.isfall = False
         self.jump_speed = 1
+        self.direction = 0  # направление персонажа
+        self.fm_time = 0
         self.t = 0       # замедление после появления нового падующего блока
         self.max_block = 1  # кол-во одновременно падующих блоков
         self.play = True
@@ -94,6 +96,15 @@ class tetge():
             thr_fall = threading.Thread(target=self.fall_blocks, args=(), name="fall_block")
             thr_fall.start()
 
+    def force_move(self, direction):
+        for _ in range(10):
+            win.fill((0, 0, 0), (self.coor_player[0], self.coor_player[1], self.size_pl[0], self.size_pl[1]))
+            if direction == 1:
+                self.coor_player[0] -= self.speed
+            elif direction == 2:
+                self.coor_player[0] += self.speed
+            pygame.time.delay(self.speed_game)
+
     def move(self):
         """передвижение игрока"""
         win.fill((0, 0, 0), (self.coor_player[0], self.coor_player[1], self.size_pl[0], self.size_pl[1]))   # стираем
@@ -106,6 +117,8 @@ class tetge():
             elif (self.field[(right+self.speed)//self.size_block][len(self.field[0])-self.coor_player[1]//self.size_block-5] not in self.permeable_blocks) or self.field[(right+self.speed)//self.size_block][len(self.field[0])-(self.coor_player[1]+self.size_pl[1])//self.size_block-5] not in self.permeable_blocks:       # блок справа снизу и справа сверху, если есть, то передвигаемся вплотную к нему
                 if pygame.key.get_pressed()[pygame.K_UP]:
                     self.isjump = True
+                    self.fm_time = 2
+                    self.direction = 1
                     self.jump_speed = 2
                 while (self.field[(right+1)//self.size_block][len(self.field[0])-self.coor_player[1]//self.size_block-5] in self.permeable_blocks) and self.field[(right+1)//self.size_block][len(self.field[0])-(self.coor_player[1]+self.size_pl[1])//self.size_block-5] in self.permeable_blocks:
                     self.coor_player[0]+=1
@@ -119,6 +132,8 @@ class tetge():
                 # if pygame.key.get_pressed()[pygame.K_UP]:
                 if pygame.key.get_pressed()[pygame.K_UP]:
                     self.isjump = True
+                    self.fm_time = 2
+                    self.direction = 2
                     self.jump_speed = 2
                 # self.jump_speed = 2
                 while (self.field[(self.coor_player[0]-1)//self.size_block][len(self.field[0])-self.coor_player[1]//self.size_block-5] in self.permeable_blocks) and self.field[(self.coor_player[0]-1)//self.size_block][len(self.field[0])-(self.coor_player[1]+self.size_pl[1])//self.size_block-5] in self.permeable_blocks:
@@ -155,6 +170,12 @@ class tetge():
                 self.jump_speed -= 0.03
                 self.coor_player[1] -= int(self.jump_speed**2)
                 # self.height_j += int(self.jump_speed**2)
+        if self.fm_time>0:
+            if self.direction == 1:
+                self.coor_player[0] -= self.speed + 1
+            elif self.direction == 2:
+                self.coor_player[0] += self.speed + 1
+            self.fm_time -= 0.1
 
         win.blit(self.player_img, self.coor_player)
         pygame.display.update()
@@ -539,7 +560,7 @@ class tetge():
                 if now_space < x_info[1] or (now_space == x_info[1] and stop_h < x_info[2]) or (
                         now_space == x_info[1] and stop_h == x_info[2] and randint(0, 1)):
                     x_info[2] = stop_h
-                    x_info[1] = now_space
+                    x_info[1] = now_space      
                     x_info[0] = x
                     now_block = block
         for i in range(len(now_block)):
