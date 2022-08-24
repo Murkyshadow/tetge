@@ -216,6 +216,8 @@ class tetge():
         mypath = './players'
         self.skin_choice = 0
         self.skins = [f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
+        # self.adds = [f for f in os.listdir('./add') if os.path.isfile(os.path.join('./add', f))]
+
         # self.player_img = pygame.image.load(self.skins[self.skin_choice])      # выведим игрока
         # self.player_img = pygame.transform.scale(self.player_img, (self.size_pl[0], self.size_pl[1]))  # подгоняем размеры персонажа
 
@@ -230,6 +232,8 @@ class tetge():
         self.background.set_alpha(130)          # полупрозрачный черный
         pygame.mixer.music.load("music/game.mp3")   # музыка при запуске игры
 
+        # self.add_font2 = pygame.font.SysFont("Times New Roman", 20)
+        # self.add_font = pygame.font.SysFont("Times New Roman", 30)
         self.gameover_title = pygame.font.Font("./fonts/failed attempt.ttf", 70)
         self.score_title = pygame.font.Font("./fonts/SUBWT___.ttf", 32)
         self.menu_font = pygame.font.Font("./fonts/SUBWT___.ttf", 28)
@@ -279,12 +283,39 @@ class tetge():
 
     def start_game_menu(self):
         self.draw_start_game_menu()
+        w = 25
+        h = 50
 
         while self.menu2:
             if not self.now_animation:
                 self.animation()
 
             for event in pygame.event.get():  # пауза на C
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if (event.button == 1):  # нажата левая кнопка
+                        if (event.pos[0] >= self.field_size[0] // 10 + 2 * w - 30 and event.pos[1] >= self.field_size[1] // 5 + 3 * h and event.pos[0] <= self.field_size[0] // 10 + 2 * w + 105 and event.pos[1] <= self.field_size[1] // 5 + 3 * h + 40):  # cтарт
+                            if self.choice != 0:
+                                self.choice = 0
+                            elif event.pos[0] <= self.field_size[0] // 10 + 2 * w - 10 +15:
+                                self.skin_choice -= 1
+                                if self.skin_choice < 0:
+                                    self.skin_choice = len(self.skins) - 1
+                            elif event.pos[0] >= self.field_size[0] // 10 + 2 * w + 105 - 65:
+                                self.skin_choice += 1
+                                if self.skin_choice == len(self.skins):
+                                    self.skin_choice = 0
+                        elif event.pos[0] >= self.field_size[0] // 10 + 2 * w and event.pos[1] >= self.field_size[1] // 5 + 5.5 * h and event.pos[0] <= self.field_size[0] // 10 + 2 * w + 105 and event.pos[1] <= self.field_size[1] // 5 + 5.5 * h + 40:  # cтарт
+                            self.menu2 = False
+                            self.reset()
+                        elif event.pos[0] >= self.field_size[0] // 10 + 2 * w and event.pos[1] >= self.field_size[1] // 5 + 7 * h and event.pos[0] <= self.field_size[0] // 10 + 2 * w + 105 and event.pos[1] <= self.field_size[1] // 5 + 7 * h + 40:  # cтарт
+                            self.menu2 = False
+                            self.menu = True
+                            self.choice = 0
+
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_c:
                         if pygame.mixer.music.get_busy():
@@ -392,6 +423,22 @@ class tetge():
                 self.animation()
 
             for event in pygame.event.get(): # пауза на C
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if (event.button == 1):   # нажата левая кнопка
+                        if (event.pos[0]>=self.field_size[0] // 5 + 20 and event.pos[1]>=self.field_size[1] // 2 and event.pos[0]<=self.field_size[0] // 5 + 20+105 and event.pos[1]<=self.field_size[1] // 2 + 40):     # cтарт
+                            self.menu = False
+                            self.menu2 = True
+                            self.start_game_menu()
+                        elif (event.pos[0]>=self.field_size[0] // 5 + 20 and event.pos[1]>=self.field_size[1] // 2+50 and event.pos[0]<=self.field_size[0] // 5 + 20+105 and event.pos[1]<=self.field_size[1] // 2 + 40+50):  # scoreboard
+                            self.menu = False
+                            self.scoreboard = True
+                            self.start_scoreboard()
+                        elif (event.pos[0]>=self.field_size[0] // 5 + 20 and event.pos[1]>=self.field_size[1] // 2+100 and event.pos[0]<=self.field_size[0] // 5 + 20+105 and event.pos[1]<=self.field_size[1] // 2 + 40+100):  # scoreboard:
+                            pygame.quit()
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_c:
                         if pygame.mixer.music.get_busy():
@@ -410,7 +457,7 @@ class tetge():
                         else:
                             self.choice += 1
                         self.draw_main_menu()
-                    if event.key == pygame.K_RETURN:
+                    if event.key == pygame.K_RETURN:   # нажата левая кнопка
                         if self.choice == 0:     # cтарт
                             self.menu = False
                             self.menu2 = True
@@ -435,6 +482,15 @@ class tetge():
                 self.animation()
 
             for event in pygame.event.get(): # пауза на C
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if (event.button == 1):   # нажата левая кнопка
+                        if (self.field_size[0] // 10+25 and event.pos[1]>=self.field_size[1] // 7+ 8.5 * 50 and event.pos[0]<=self.field_size[0] // 10+25+105 and event.pos[1]<=self.field_size[1] // 7 + 8.5 * 50 + 40):     # cтарт
+                            self.scoreboard = False
+                            self.menu = True
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_c:
                         if pygame.mixer.music.get_busy():
@@ -700,6 +756,20 @@ class tetge():
         while 1:
             events = list(pygame.event.get())
             for event in events:
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if (event.button == 1):  # нажата левая кнопка
+                        if (event.pos[0] >= self.field_size[0] // 5 + w and event.pos[1] >= self.field_size[1] // 2 and event.pos[0] <= self.field_size[0] // 5 + w + 105 and event.pos[1] <= self.field_size[1] // 2 + 40):  # cтарт
+                            self.reset()
+                            return True
+                        elif (event.pos[0] >= self.field_size[0] // 5 + w and event.pos[1] >= self.field_size[1] // 2 + 50 and event.pos[0] <= self.field_size[0] // 5 + w + 105 and event.pos[1] <= self.field_size[1] // 2 + 40 + 50):  # cтарт
+                            self.menu = True
+                            self.reset()
+                            self.main_menu()
+                            return True
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
                         win.fill((0, 0, 0), (self.field_size[0] // 5 + w, y + h * choice, 16, 32))  # стираем
@@ -715,12 +785,26 @@ class tetge():
                         pygame.display.update()
                     if event.key == pygame.K_RETURN:
                         if choice == 0:  # cтарт
+                            # self.add_draw()
                             self.reset()
                         else:
                             self.menu = True
                             self.reset()
                             self.main_menu()
                         return True
+
+    # def add_draw(self):
+    #     win.fill((0, 0, 0))
+    #     add = self.adds[randint(0, len(self.adds)-1)]
+    #     add = pygame.image.load(f'add/{add}')
+    #     add = pygame.transform.scale(add, (24 * 18, 243))  # подгоняем размеры персонажа
+    #     win.blit(add, [0, 100])
+    #     text1 = self.add_font.render('Реинкарнация безработного', True, (255, 255, 255))
+    #     win.blit(text1, (40, 50))
+    #     text1 = self.add_font2.render('Крутое аниме, которое советую посмотреть', True, (255, 255, 255))
+    #     win.blit(text1, (30, 400))
+    #     pygame.display.update()
+    #     time.sleep(7)
 
     def insert_in_scoreboard(self):
         self.cur = self.con.cursor()
