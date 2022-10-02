@@ -132,7 +132,8 @@ class tetge():
 
     def move(self):
         """передвижение игрока"""
-        win.fill((0, 0, 0), (self.coor_player[0], self.coor_player[1], self.size_pl[0], self.size_pl[1]))   # стираем
+        # win.fill((0, 0, 0), (self.coor_player[0], self.coor_player[1], self.size_pl[0], self.size_pl[1]))   # стираем
+
         right = self.coor_player[0]+self.size_pl[0] # "x" правой части персонажа
         bottom = self.coor_player[1]+self.size_pl[1]+23 # "y" нижней части персонажа + после падения
 
@@ -210,7 +211,9 @@ class tetge():
                 self.fm_time = 0
             self.fm_time -= 0.1
             self.speed -= 1
-
+        win.blit(self.background2, (0, 0))
+        self.update_win(2)
+        self.score(0)
         win.blit(self.player_img, self.coor_player)
         pygame.display.update()
 
@@ -250,6 +253,7 @@ class tetge():
         # self.player_img = pygame.image.load(self.skins[self.skin_choice])      # выведим игрока
         # self.player_img = pygame.transform.scale(self.player_img, (self.size_pl[0], self.size_pl[1]))  # подгоняем размеры персонажа
 
+        self.background2 = pygame.image.load('img/background.jpg')
         self.arrow = pygame.image.load('img/arrow.png')
         self.arrow = pygame.transform.scale(self.arrow, (70, 35))
         self.crown = pygame.image.load('img/crown.png')
@@ -620,7 +624,8 @@ class tetge():
 
     def update_win(self, update=1):
         """при смене уровня карты, перерисовывает все окно"""
-        win.fill((0, 0, 0))
+        if update != 2:
+            win.fill((0, 0, 0))
         y_win = 24
         for y in range(len(self.field[0]) - 28, len(self.field[0]) - 4):
             y_win -= 1
@@ -635,8 +640,8 @@ class tetge():
                     win.blit(self.color_blocks[3], (x * 24, y_win * 24))
         if not update:
             win.blit(self.background, (0, 0))
-        else:
-            self.score()
+        elif update != 2:
+            # self.score()
             pygame.display.update()
 
     def fall_blocks(self):
@@ -737,17 +742,18 @@ class tetge():
                 for i, b in enumerate(block[x]):  # стираем поле, где был блок
                     if b == 1 or b == 2 or b == 3 or b == 4:
                         self.field[place + x][y + i] = 0
-                        if self.play:   # для следа в меню
-                            win.fill((0, 0, 0), ((place + x) * 24, (y_win - i) * 24, 24, 24))
+                        # if self.play:   # для следа в меню
+                        #     win.fill((0, 0, 0), ((place + x) * 24, (y_win - i) * 24, 24, 24))
             y -= 1
             y_win += 1
             for x in range(len(block)):  # заполняем поле блоком в текущем y
                 for i, b in enumerate(block[x], 0):
                     if b == 1 or b == 2 or b == 3 or b == 4:
                         self.field[place + x][y + i] = color
-                        win.blit(self.color_blocks[color-1], ((place + x) * 24, (y_win - i) * 24))
-                        if (place + x >= 7 or y_win - i >= 2) and self.play:  # перерисовываем score если его задел блок
-                            self.score(0)
+                        if not self.play:
+                            win.blit(self.color_blocks[color-1], ((place + x) * 24, (y_win - i) * 24))
+                        # if (place + x >= 7 or y_win - i >= 2) and self.play:  # перерисовываем score если его задел блок
+                        #     self.score(0)
                         if ((self.coor_player[0] + 1) // self.size_block == place + x or (self.coor_player[0] + 15) // 24 == place + x) and len(self.field[0]) - (self.coor_player[1] + 20) // 24 - 5 == y + i:
                             self.play = False
                             self.now_animation = True
@@ -773,11 +779,11 @@ class tetge():
         before = self.max_h
         self.max_h = max(self.max_h, row_pl)
         if self.max_h != before:
-            self.score()
-
+            # self.score()
+            pass
         elif row_pl - (len(self.field[0]) - 28) > 10:
             self.max_h += 1
-            self.score()
+            # self.score()
         if self.play:
             self.score(0)
 
