@@ -10,7 +10,7 @@ import pygame
 import pygame.mixer
 import sqlite3
 
-def start():
+def start():    # таймер
     global st
     st = time.time()
 
@@ -18,7 +18,109 @@ def end():
     return float("%.2f"%(time.time()-st))
 
 class tetge():
+    def setting(self):
+        """настройки игры"""
+        pygame.font.init()
+        pygame.mixer.init()
+
+        self.blocks_old = [[[1, 1], [1, 1]], [[1, 1], [1], [1]], [[1], [1, 1, 1]], [[1, 1, 1], [0, 0, 1]],
+                           [[0, 1], [0, 1], [1, 1]], [[1, 1, 1], [0, 1]], [[1], [1, 1], [1]], [[0, 1], [1, 1, 1]],
+                           [[0, 1], [1, 1], [0, 1]], [[1], [1], [1], [1]], [[1, 1, 1, 1]], [[1, 1], [0, 1], [0, 1]],
+                           [[0, 0, 1], [1, 1, 1]], [[1, 1, 1], [1]],
+                           [[1], [1], [1, 1]]]  # записаны столбики каждого блока
+
+        self.blocks = [[[1, 1], [1, 1]],  # квадрат
+                       [[1, 1], [1, 0], [1, 0]],  # Г фигура
+                       [[1, 1], [0, 1], [0, 1]],  # Г фигура перевернутая
+                       [[1, 1, 1], [0, 1, 0]],  # э т о
+                       [[1, 1, 1, 1]],  # палка
+                       [[0, 1, 1], [1, 1, 0]],  # зигзаг
+                       [[1, 1, 0], [0, 1, 1]]]  # зигзаг другой
+
+        self.speed = 2  # скорость передвижения игрока
+        self.size_pl = [17, 20]  # размер персонажа в пикселях
+        self.size_block = 24    # размер блока
+        self.speed_game = 10  # скорость игры
+        self.permeable_blocks = [0]  # блоки, через которые игрок может проходить (воздух и в будущем бонусы)
+        self.block_drop_time = 0.041  # время за которое падующий блок преодалевает 1 блок
+        self.block_drop_time_start = 0.045
+
+        self.skin_choice = 0
+        self.field_size = [24 * 18, 24 * 24]  # размер поля в пикселях
+        mypath = './players'
+        self.skins = [f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
+
+        # self.player_img = pygame.image.load(self.skins[self.skin_choice])      # выведим игрока
+        # self.player_img = pygame.transform.scale(self.player_img, (self.size_pl[0], self.size_pl[1]))  # подгоняем размеры персонажа
+
+        self.plane = pygame.transform.scale(pygame.image.load('img/plane.png'), (153, 100))
+        self.background = pygame.image.load('img/background.png')
+        self.fail = pygame.image.load('img/fail.png')
+        self.fail = pygame.transform.scale(self.fail, (150, 163))
+        self.arrow = pygame.image.load('img/arrow.png')
+        self.arrow = pygame.transform.scale(self.arrow, (70, 35))
+        self.crown = pygame.image.load('img/crown.png')
+        self.crown = pygame.transform.scale(self.crown, (30, 24))
+        self.color_blocks = [pygame.image.load('img/cube1.png'), pygame.image.load('img/cube2.png'), pygame.image.load('img/cube3.png'), pygame.image.load('img/cube4.png'), pygame.image.load('img/cube5.png')]
+        icon = pygame.image.load('img/icon.ico')
+        icon = pygame.transform.scale(icon, (64, 64))
+        pygame.display.set_icon(icon)
+
+        self.background_black = pygame.image.load('img/black.png')
+        self.background_black.set_alpha(130)          # полупрозрачный черный
+
+        pygame.mixer.music.load("music/game.mp3")   # музыка при запуске игры
+
+        self.rules_font = pygame.font.SysFont("comicsansms", 24)
+        self.add_font2 = pygame.font.SysFont("Times New Roman", 15)
+        self.add_font = pygame.font.SysFont("Times New Roman", 30)
+        self.gameover_title = pygame.font.Font("./fonts/failed attempt.ttf", 70)
+        self.score_title = pygame.font.Font("./fonts/SUBWT___.ttf", 32)
+        self.menu_font = pygame.font.Font("./fonts/SUBWT___.ttf", 28)
+        self.game_title = pygame.font.Font("./fonts/Blox2.ttf", 98)
+        self.creators = pygame.font.Font("./fonts/SUBWT___.ttf", 16)
+        self.fifaks_font = pygame.font.Font("./fonts/Fifaks10Dev1.ttf",24)
+
+        self.taunts = [
+                        'В следующий раз будьте\nвнимательней!',
+                        'Вы были слишком медленным,\nчтобы уклониться от блока',
+                        'Теперь вы блинчик',
+                        'Вы не выдержали веса\nнескольких кубиков',
+                        'Сегодня ожидается дождь из блоков.\nНе забудьте прихватить зонтик',
+                        'Вас расплющило :(',
+
+                        'Напомню, что цель игры\nуклоняться от блоков, а не наоборот',
+                        'Музыку можно выключить,\nнажав на букву \'с\'',
+                        # 'Поздравляем с ещё одним\nпроигрышом ^_^',
+                        'Можно добавить свой скин, если\nпоместить фото в папку "players"',
+                        # 'Спасибо за игру\nЖдем вас снова :)',
+                        'Эту игру можно пройти',
+
+                        'Где скилл, Лебовски?',
+                        'Вы проиграли в какой-то раз',       # написать сколько смертей - сделано
+                        'Вы проиграли в...\nЯ сбился со счета в какой раз',
+                        'Ходит легенда, что\nблоки в меню не бесконечны',
+                        # 'Вся боль начинается с 33 очков',
+
+                        'Гравитация штука тяжелая',
+                        'Вам пора баиньки',
+                        'Еще разок?',
+                        'Берегите голову',
+
+                        'Вы любите фурри?',
+
+        ]
+        self.special_taunts = [
+            'Бугагашеньки',  # если 13 33 66 99 666 999 очков
+            'Ты же умер не специально,\nчтобы посмотреть надпись? Верно же?',  # если счёт ноль
+            'Поздравляю с победой!\nПравда вы все равно умерли от\nголода под завалами блоков'
+        ]
+
+        self.taunts.append(f'Всего здесь {len(self.taunts)+len(self.special_taunts)+1} надпись(ей)')
+
     def reset(self):
+        pygame.mixer.music.load("music/game.mp3")   # музыка при запуске игры
+
         win.fill((0, 0, 0))
         self.max_h = 0  # значение максимальной достигнутой высоты персонажем
         self.field = []  # поле 24 на 18
@@ -27,14 +129,14 @@ class tetge():
         self.isjump = False
         self.house = False
         self.time_house = 5
+        self.coor_player = [192, self.field_size[1]-self.size_pl[1]-2]   # начальные координаты игрока
+        self.reflaction_x = 0   # отражение игрока право/лево
+        self.reflaction_y = 0
+        self.coor_plane = [self.field_size[0], 15]
 
-        self.setting()
 
         for i in range(self.field_size[0]//self.size_block):
-            # if i != 4:
             self.field.append([0] * (self.field_size[1]//self.size_block+4))  # одновременно видно будет только 24 клетки (вверх) и 18 клеток в ширину
-            # else:
-            #     self.field.append([1] * (self.field_size[1]//self.size_block+4))  # одновременно видно будет только 24 клетки (вверх) и 18 клеток в ширину
 
         self.height = [0] * (self.field_size[0]//self.size_block)  # высота каждого столбца
 
@@ -57,19 +159,52 @@ class tetge():
         self.DataBase()
         self.play_music = True
         self.menu = True
+
+        self.skin_choice = 0
+        self.setting()
         self.reset()
+
         self.main_menu()
         self.reset()
-        text_dodge = self.rules_font.render('Уворачивайся от блоков!!!', False, (255, 255, 255))
-        win.blit(text_dodge, (69, 100))
+
+        win.blit(self.background, (0, 0), (0, 2880-24*24, 24*18, 24*24))
+        self.score(0)
+
+        text_dodge = self.fifaks_font.render('Уворачивайся от блоков.', False, (255, 255, 255))
+        win.blit(text_dodge, (88, 100))
         win.blit(self.player_img, self.coor_player)
-        text_dodge = self.rules_font.render('Управление с помощью стрелочек!!!', False, (255, 255, 255))
-        win.blit(text_dodge, (7, 140))
+        text_dodge = self.fifaks_font.render('Управляй стрелочками.', False, (255, 255, 255))
+        win.blit(text_dodge, (96, 140))
         win.blit(self.arrow, (self.field_size[0]//2-35, 190))
 
+        # text_dodge = self.fifaks_font.render('Специальная версия с фурри', False, (255, 255, 255))
+        # win.blit(text_dodge, (70, 300))
+        # text_dodge = self.fifaks_font.render('для Алексея Владимировича', False, (255, 255, 255))
+        # win.blit(text_dodge, (77, 340))
+
         pygame.display.update()
-        time.sleep(5)
-        win.fill((0, 0, 0))
+
+        wait = 4
+        start()
+        while end() <= wait:
+            for event in pygame.event.get():  # пауза на C
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_c:
+                        if pygame.mixer.music.get_busy():
+                            pygame.mixer.music.pause()
+                            self.play_music = False
+                        else:
+                            pygame.mixer.music.unpause()
+                            self.play_music = True
+                    if event.key == pygame.K_0:
+                        global st
+                        st += wait
+
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+        win.blit(self.background, (0, 0), (0, 2304-24*24, 24*18, 24*24))
 
         while 1:
             if not self.play:
@@ -110,20 +245,30 @@ class tetge():
                 thr_fall = threading.Thread(target=self.fall_blocks, args=(), name="fall_block")
                 thr_fall.start()
 
+    def plane_animation(self):
+        if self.max_h >= 26:
+            self.coor_plane[1] = 35 + (self.max_h-26)*24
+            x, y = self.coor_plane
+            win.blit(self.plane, (int(x), y+20))
+            self.coor_plane[0] -= 1.5
+
+
     def animation(self):
         if len(self.now_blocks) < self.max_block and self.count <= 0 or len(self.now_blocks) == 0:
             self.count = 10
             if len(self.now_blocks) < 8:
                 self.new_generation_field()
+
         self.count -= 1
         c = 0
         for f in self.field:
             if f[22] == 0:
                 c+=1
+
         if c <= 1:
-            self.background.set_alpha(220)  # полупрозрачный черный
+            self.background_black.set_alpha(220)  # полупрозрачный черный
             self.update_win(0)
-            self.background.set_alpha(0)
+            self.background_black.set_alpha(0)
 
         if not self.now_animation:  # обрабатываем анимацию падения блоков в отдельном потоке
             self.now_animation = True
@@ -132,10 +277,16 @@ class tetge():
 
     def move(self):
         """передвижение игрока"""
-        # win.fill((0, 0, 0), (self.coor_player[0], self.coor_player[1], self.size_pl[0], self.size_pl[1]))   # стираем
+        win.blit(self.background, (0, 0), (0, 2880-(24+max(0, self.max_h-11))*24, 24*18, 24*24))    # отрисовка и  прокрутка заднего фона
+        self.plane_animation()
+        self.update_win(2)
+        self.score(0)
 
         right = self.coor_player[0]+self.size_pl[0] # "x" правой части персонажа
         bottom = self.coor_player[1]+self.size_pl[1]+23 # "y" нижней части персонажа + после падения
+
+        x_before = self.coor_player[0]  # для отражения игрока
+        y_before = self.coor_player[1]
 
         if pygame.key.get_pressed()[pygame.K_RIGHT]:  # ходьба в право
             if self.direction == 2:
@@ -160,13 +311,11 @@ class tetge():
             if self.coor_player[0]-self.speed < 0: # стенка слева
                 self.coor_player[0] = 0
             elif self.field[(self.coor_player[0]-self.speed)//self.size_block][len(self.field[0])-self.coor_player[1]//self.size_block-5] not in self.permeable_blocks or self.field[(self.coor_player[0]-self.speed)//self.size_block][len(self.field[0])-(self.coor_player[1]+self.size_pl[1])//self.size_block-5] not in self.permeable_blocks:       # блок слева снизу и справа сверху,  если есть, то передвигаемся вплотную к нему
-                # if pygame.key.get_pressed()[pygame.K_UP]:
                 if pygame.key.get_pressed()[pygame.K_UP] and ((self.field[self.coor_player[0]//self.size_block][len(self.field[0])-bottom//self.size_block-5] in self.permeable_blocks and self.field[right//self.size_block][len(self.field[0])-bottom//self.size_block-5] in self.permeable_blocks) and bottom < self.field_size[1]):
                     self.isjump = True
                     self.fm_time = 2
                     self.direction = 2
                     self.jump_speed = 2
-                # self.jump_speed = 2
                 while (self.field[(self.coor_player[0]-1)//self.size_block][len(self.field[0])-self.coor_player[1]//self.size_block-5] in self.permeable_blocks) and self.field[(self.coor_player[0]-1)//self.size_block][len(self.field[0])-(self.coor_player[1]+self.size_pl[1])//self.size_block-5] in self.permeable_blocks:
                     self.coor_player[0]-=1
             else:       # стенки и блока справа нет
@@ -180,9 +329,11 @@ class tetge():
             self.jump_speed = 2
 
         if not self.isjump:     # падение
-            if (self.field[self.coor_player[0]//self.size_block][len(self.field[0])-bottom//self.size_block-5] in self.permeable_blocks and self.field[right//self.size_block][len(self.field[0])-bottom//self.size_block-5] in self.permeable_blocks) and bottom < self.field_size[1]:    # если снизу нет блока
+            if (self.field[self.coor_player[0]//self.size_block][len(self.field[0])-bottom//self.size_block-5] in self.permeable_blocks and\
+                self.field[right//self.size_block][len(self.field[0])-bottom//self.size_block-5] in self.permeable_blocks) and\
+                    bottom < self.field_size[1]:    # если снизу нет блока
                 if self.jump_speed < 2:
-                    self.jump_speed += 0.03     # 0.03 - ускорение свободного падения
+                    self.jump_speed += 0.035     # 0.03 - ускорение свободного падения
                 self.coor_player[1] += int(self.jump_speed ** 2)
             else:
                 self.isfall = False
@@ -211,110 +362,22 @@ class tetge():
                 self.fm_time = 0
             self.fm_time -= 0.1
             self.speed -= 1
-        win.blit(self.background2, (0, 0))
-        self.update_win(2)
-        self.score(0)
-        win.blit(self.player_img, self.coor_player)
+
+        if x_before > self.coor_player[0]:  # отражение персонажа по горизонтали
+            self.reflaction_x = 1
+        elif x_before < self.coor_player[0]:
+            self.reflaction_x = 0
+
+        # if y_before > self.coor_player[1]:  # отражение персонажа по горизонтали
+        #     self.reflaction_y = 0
+        # elif y_before < self.coor_player[1]:
+        #     self.reflaction_y = 1
+
+        win.blit(pygame.transform.flip(self.player_img, self.reflaction_x, self.reflaction_y), self.coor_player)
         pygame.display.update()
 
-    def setting(self):
-        """настройки игры"""
-        pygame.font.init()
-        pygame.mixer.init()
-
-        self.blocks_old = [[[1, 1], [1, 1]], [[1, 1], [1], [1]], [[1], [1, 1, 1]], [[1, 1, 1], [0, 0, 1]],
-                           [[0, 1], [0, 1], [1, 1]], [[1, 1, 1], [0, 1]], [[1], [1, 1], [1]], [[0, 1], [1, 1, 1]],
-                           [[0, 1], [1, 1], [0, 1]], [[1], [1], [1], [1]], [[1, 1, 1, 1]], [[1, 1], [0, 1], [0, 1]],
-                           [[0, 0, 1], [1, 1, 1]], [[1, 1, 1], [1]],
-                           [[1], [1], [1, 1]]]  # записаны столбики каждого блока
-
-        self.blocks = [[[1, 1], [1, 1]],  # квадрат
-                       [[1, 1], [1, 0], [1, 0]],  # Г фигура
-                       [[1, 1], [0, 1], [0, 1]],  # Г фигура перевернутая
-                       [[1, 1, 1], [0, 1, 0]],  # э т о
-                       [[1, 1, 1, 1]],  # палка
-                       [[0, 1, 1], [1, 1, 0]],  # зигзаг
-                       [[1, 1, 0], [0, 1, 1]]]  # зигзаг другой
-
-        self.speed = 2  # скорость передвижения игрока
-        self.size_pl = [17, 20]  # размер персонажа в пикселях
-        self.size_block = 24    # размер блока
-        self.speed_game = 10  # скорость игры
-        self.permeable_blocks = [0]  # блоки, через которые игрок может проходить (воздух и в будущем бонусы)
-        self.block_drop_time = 0.041  # время за которое падующий блок преодалевает 1 блок
-        self.block_drop_time_start = 0.045
-
-        self.field_size = [24 * 18, 24 * 24]  # размер поля в пикселях
-        self.coor_player = [192, self.field_size[1]-self.size_pl[1]-2]   # начальные координаты игрока
-        mypath = './players'
-        self.skin_choice = 0
-        self.skins = [f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
-
-        # self.player_img = pygame.image.load(self.skins[self.skin_choice])      # выведим игрока
-        # self.player_img = pygame.transform.scale(self.player_img, (self.size_pl[0], self.size_pl[1]))  # подгоняем размеры персонажа
-
-        self.background2 = pygame.image.load('img/background.jpg')
-        self.arrow = pygame.image.load('img/arrow.png')
-        self.arrow = pygame.transform.scale(self.arrow, (70, 35))
-        self.crown = pygame.image.load('img/crown.png')
-        self.crown = pygame.transform.scale(self.crown, (30, 24))
-        self.color_blocks = [pygame.image.load('img/cube1.png'), pygame.image.load('img/cube2.png'), pygame.image.load('img/cube3.png'), pygame.image.load('img/cube4.png')]
-        icon = pygame.image.load('img/icon.ico')
-        icon = pygame.transform.scale(icon, (64, 64))
-        pygame.display.set_icon(icon)
-
-        self.background = pygame.image.load('img/black.png')
-        self.background.set_alpha(130)          # полупрозрачный черный
-
-        pygame.mixer.music.load("music/game.mp3")   # музыка при запуске игры
-
-        self.rules_font = pygame.font.SysFont("comicsasmns", 24)
-        self.add_font2 = pygame.font.SysFont("Times New Roman", 15)
-        self.add_font = pygame.font.SysFont("Times New Roman", 30)
-        self.gameover_title = pygame.font.Font("./fonts/failed attempt.ttf", 70)
-        self.score_title = pygame.font.Font("./fonts/SUBWT___.ttf", 32)
-        self.menu_font = pygame.font.Font("./fonts/SUBWT___.ttf", 28)
-        self.game_title = pygame.font.Font("./fonts/Blox2.ttf", 98)
-        self.creators = pygame.font.Font("./fonts/SUBWT___.ttf", 16)
-        self.fifaks_font = pygame.font.Font("./fonts/Fifaks10Dev1.ttf",24)
-
-        self.taunts = [
-                        'В следующий раз будьте\nвнимательней!',
-                        'Вы были слишком медленным,\nчтобы уклониться от блока',
-                        'Теперь вы блинчик',
-                        'Вы не выдержали веса\nнескольких кубиков',
-                        'Сегодня ожидается дождь из блоков.\nНе забудьте прихватить зонтик',
-                        'Вас расплющило :(',
-
-                        'Напомню, что цель игры\nуклоняться от блоков, а не наоборот',
-                        'Музыку можно выключить,\nнажав на букву \'с\'',
-                        'Поздравляем с ещё одним\nпроигрышом ^_^',
-                        'Можно добавить свой скин, если\nпоместить фото в папку "players"',
-                        'Спасибо за игру\nЖдем вас снова :)',
-                        'Эту игру можно пройти',
-
-                        'Где текст, Лебовски?',
-                        'Вы проиграли в какой-то раз',       # написать сколько смертей
-                        'Вы проиграли в...\nЯ сбился со счета в какой раз',
-                        'Ходит легенда, что\nблоки в меню не бесконечны',
-                        'Вся боль начинается с 33 очков',
-
-                        'Гравитация штука тяжелая',
-                        'Вам пора баиньки',
-                        'Еще разок?',
-                        'Берегите голову'
-                       ]
-
-        self.special_taunts = [
-            'Бугагашеньки',  # если 13 33 66 99 666 999 очков
-            'Ты же умер не специально,\nчтобы посмотреть надпись? Верно же?',  # если счёт ноль
-            'Поздравляю с победой!\nПравда вы все равно умерли от\nголода под завалами блоков'
-        ]
-
-        self.taunts.append(f'Всего здесь {len(self.taunts)+len(self.special_taunts)+1} надписей')
-
     def draw_start_game_menu(self):
-        win.blit(self.background, (0, 0))
+        win.blit(self.background_black, (0, 0))
         w = 25
         h = 50
         y = self.field_size[1] // 5
@@ -378,7 +441,6 @@ class tetge():
                         elif event.pos[0] >= self.field_size[0] // 10 + 2 * w and event.pos[1] >= self.field_size[1] // 5 + 7 * h and event.pos[0] <= self.field_size[0] // 10 + 2 * w + 105 and event.pos[1] <= self.field_size[1] // 5 + 7 * h + 40:  # cтарт
                             self.menu2 = False
                             self.menu = True
-                            self.choice = 0
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_c:
@@ -429,7 +491,7 @@ class tetge():
                         self.choice = 0
 
     def draw_main_menu(self):
-        win.blit(self.background, (0, 0))
+        win.blit(self.background_black, (0, 0))
         s = 52
         w = 20
         y = self.field_size[1] // 5
@@ -474,7 +536,7 @@ class tetge():
         self.block_drop_time = 0.07
         self.coor_player = [self.field_size[0]+100, self.field_size[1]+100]     # чтобы персонажа не убило на заднем фоне
 
-        self.skin_choice = 0
+        # self.skin_choice = 0
         self.choice = 0
         self.draw_main_menu()
 
@@ -579,7 +641,7 @@ class tetge():
                         self.menu = True
 
     def draw_scoreboard(self):
-        win.blit(self.background, (0, 0))
+        win.blit(self.background_black, (0, 0))
         w = 25
         h = 50
         y = self.field_size[1] // 7
@@ -617,15 +679,14 @@ class tetge():
         pygame.display.update()
 
     def score(self, fill=1):
-        if fill:    # не заполняем при перерисовке с падением блока
+        if fill == 1:    # не заполняем при перерисовке с падением блока
             win.fill((0, 0, 0), (0, 0, 170, 35))
         text_surface = self.score_title.render('Score: ' + str(self.max_h), False, (242, 243, 244))
         win.blit(text_surface, (0, 0))
 
     def update_win(self, update=1):
         """при смене уровня карты, перерисовывает все окно"""
-        if update != 2:
-            win.fill((0, 0, 0))
+        # win.fill((0, 0, 0))
         y_win = 24
         for y in range(len(self.field[0]) - 28, len(self.field[0]) - 4):
             y_win -= 1
@@ -638,9 +699,14 @@ class tetge():
                     win.blit(self.color_blocks[2], (x * 24, y_win * 24))
                 elif self.field[x][y] == 4:
                     win.blit(self.color_blocks[3], (x * 24, y_win * 24))
+                elif self.field[x][y] == 5:
+                    win.blit(self.color_blocks[4], (x*24, y_win*24))
+
         if not update:
-            win.blit(self.background, (0, 0))
-        elif update != 2:
+            win.blit(self.background_black, (0, 0))
+        elif update == 2:
+            pass
+        else:
             # self.score()
             pygame.display.update()
 
@@ -700,7 +766,14 @@ class tetge():
                     now_block = block
         for i in range(len(now_block)):
             self.height[x_info[0] + i] = x_info[2] + len(now_block[i])  # пересчитываем высоту после падения блока
-        color = randint(1, 4)
+
+        print(self.skin_choice)
+        if self.skins[self.skin_choice] == 'я_mario.png':     # если скин марио, то генерируется блок с вопросом
+            color = randint(1, 5)
+        else:
+            color = randint(1, 4)
+
+
         self.now_blocks.append([now_block, x_info[2], x_info[0], len(self.field[0]) - 5, 0, color])
 
     def rotate_block(self, block, rt):
@@ -719,21 +792,21 @@ class tetge():
                             rotated[y].pop(x + 1)
         return rotated
 
-    def generation_field(self):
-        """генерирует блок и место, где остановится блок"""
-        block = self.blocks_old[randint(0, len(self.blocks) - 1)]  # блок, который будет падать
-        y = 23
-        place = self.place_fall(block)  # координата, где будет падать блок
-        maximum_h = self.height[place] + y
-        before = maximum_h + 1
-        for i, b in enumerate(block):
-            if maximum_h + b.count(0) - self.height[place + i] <= before:
-                before = maximum_h + b.count(0) - self.height[place + i]
-                stop_h = self.height[place + i] - b.count(0)  # высота, на которой остановиться блок после падении
-        for i in range(len(block)):
-            self.height[place + i] = stop_h + len(block[i])  # пересчитываем высоту после падения блока
-        color = randint(1, 4)
-        self.now_blocks.append([block, stop_h, place, len(self.field[0]) - 5, 0, color])
+    # def generation_field(self):
+    #     """генерирует блок и место, где остановится блок"""
+    #     block = self.blocks_old[randint(0, len(self.blocks) - 1)]  # блок, который будет падать
+    #     y = 23
+    #     place = self.place_fall(block)  # координата, где будет падать блок
+    #     maximum_h = self.height[place] + y
+    #     before = maximum_h + 1
+    #     for i, b in enumerate(block):
+    #         if maximum_h + b.count(0) - self.height[place + i] <= before:
+    #             before = maximum_h + b.count(0) - self.height[place + i]
+    #             stop_h = self.height[place + i] - b.count(0)  # высота, на которой остановиться блок после падении
+    #     for i in range(len(block)):
+    #         self.height[place + i] = stop_h + len(block[i])  # пересчитываем высоту после падения блока
+    #     color = randint(1, 4)
+    #     self.now_blocks.append([block, stop_h, place, len(self.field[0]) - 5, 0, color])
 
     def fall(self, block, stop_h, place, y, y_win, color):
         """анимация падения блока"""
@@ -781,11 +854,13 @@ class tetge():
         if self.max_h != before:
             # self.score()
             pass
+
         elif row_pl - (len(self.field[0]) - 28) > 10:
             self.max_h += 1
             # self.score()
         if self.play:
-            self.score(0)
+            pass
+            # self.score(0)
 
         if self.max_h >= 12 and len(self.field[0]) - self.max_h <= 16:
             up = len(self.field[0]) - self.max_h - 15
@@ -795,11 +870,11 @@ class tetge():
                     self.field[i].append([0])
                 for i in range(len(self.now_blocks)):
                     self.now_blocks[i][4] += 1
-                self.update_win()
-                win.fill((0, 0, 0), (self.coor_player[0], self.coor_player[1], 17, 20))
+                # self.update_win()
+                # win.fill((0, 0, 0), (self.coor_player[0], self.coor_player[1], 17, 20))
                 self.coor_player[1] += 24
-                win.blit(self.player_img, (self.coor_player[0], self.coor_player[1]))
-                pygame.display.update()
+                # win.blit(self.player_img, (self.coor_player[0], self.coor_player[1]))
+                # pygame.display.update()
 
     def death(self):
         self.insert_in_scoreboard()
@@ -812,6 +887,8 @@ class tetge():
         win.blit(text1, text_rect)
         text1 = self.menu_font.render('Score: ' + str(self.max_h), True, (255, 255, 255))
         win.blit(text1, (w / 3+10, h / 2 - 130))
+
+        win.blit(self.fail, (w / 3+10, h / 2 + 80))
 
         if self.house:
             funny_text = self.special_taunts[2] # в домике
@@ -923,5 +1000,58 @@ class tetge():
 
 if __name__ == "__main__":
     pygame.init()
+    pygame.display.set_caption('Tetge')
+    icon = pygame.image.load('img/icon.ico')
+    pygame.display.set_icon(icon)
+
     win = pygame.display.set_mode((24 * 18, 24 * 24))
     game = tetge()
+
+    # тута красота :)  :
+    # win = pygame.display.set_mode((512, 512))
+    # for y in range(24*24):
+    #     for x in range(255):
+    #         win.fill((255-x, 0, x), ((x, y), (1, 1)))
+    #
+    #
+    #     for x in range(255, 511):
+    #         color = randint(x-255, x)
+    #         if color > 255:
+    #             win.fill((color-255, 0, 255), ((x, y), (1, 1)))
+    #         else:
+    #             win.fill((255, 0, color), ((x, y), (1, 1)))
+    # pygame.display.update()
+    #
+    # type = 1
+    # while 1:
+    #     for event in pygame.event.get():  # пауза на C
+    #         if event.type == pygame.QUIT:
+    #             pygame.quit()
+    #             sys.exit()
+    #         if event.type == pygame.KEYDOWN:
+    #             if event.key == pygame.K_1:
+    #                 type = 1
+    #             if event.key == pygame.K_2:
+    #                 type = 2
+    #
+    #     if pygame.key.get_pressed()[pygame.K_UP] and y >= 0:
+    #         win.fill((0, 0, 0), ((0, int(y)), (512, 1)))
+    #         y -= 0.1
+    #         pygame.display.update()
+    #
+    #     if type == 1:
+    #         if pygame.key.get_pressed()[pygame.K_DOWN] and y <= 512:
+    #             for x in range(255):
+    #                 win.fill((255 - x, 0, x), ((x, int(y)), (1, 1)))
+    #                 win.fill((0, x, 255 - x), ((x+255, int(y)), (1, 1)))
+    #             y += 0.1
+    #             pygame.display.update()
+    #
+    #     if type == 2:
+    #         if pygame.key.get_pressed()[pygame.K_DOWN] and y <= 512:
+    #             for x in range(255):
+    #                 win.fill((255 - x, 0, x), ((x, int(y)), (1, 1)))
+    #                 win.fill((0, x, 255 - x), ((x+255, int(y)), (1, 1)))
+    #                 y += 0.1
+    #                 pygame.display.update()
+
