@@ -3,26 +3,27 @@ import datetime
 import os
 import random
 import sys
-# import threading
+import threading
 import time
 from random import randint
 import pygame
 import pygame.mixer
 import sqlite3
 
-from pygame import RESIZABLE
 
-class timer():
-    def __init__(self):  # таймер
-        self.st = time.time()
+def start():  # таймер
+    global st
+    st = time.time()
 
-    def end(self):
-        return float("%.2f" % (time.time() - self.st))
+
+def end():
+    return float("%.2f" % (time.time() - st))
 
 
 class character():
     def set_player(self, coor_player, control={'left':pygame.K_LEFT, 'up':pygame.K_UP, 'right':pygame.K_RIGHT}, img = 1):
         # self.max_h = max_h  # значение максимальной достигнутой высоты персонажем, но пока оставим максимальную
+
         # jump:
         self.isjump = False  # сейчас игрок не в прыжке
         self.isfall = False
@@ -47,7 +48,6 @@ class tetge():
     def setting(self):
         """настройки игры"""
         pygame.font.init()
-
         try:
             pygame.mixer.init()
         except Exception:
@@ -70,7 +70,7 @@ class tetge():
         # self.speed = 2  # скорость передвижения игроков
         self.size_pl = [17, 20]  # размер персонажа в пикселях
         self.size_block = 24  # размер блока
-        self.speed_game = 6 # скорость игры
+        self.speed_game = 10  # скорость игры
         self.permeable_blocks = [0]  # блоки, через которые игрок может проходить (воздух и в будущем бонусы)
         self.block_drop_time = 0.041  # время за которое падующий блок преодалевает 1 блок
         self.block_drop_time_start = 0.045
@@ -80,44 +80,35 @@ class tetge():
         mypath = './players'
         self.skins = [f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
 
-        self.helmet_one = pygame.image.load(self.android_path + 'img/helmet_one.png').convert_alpha()   # шлем для космоса (с 42)
-        self.helmet_two = pygame.image.load(self.android_path + 'img/helmet_two.png').convert_alpha()   # шлем для космоса (с 42)
+        self.helmet_one = pygame.image.load('img/helmet_one.png')   # шлем для космоса (с 42)
+        self.helmet_two = pygame.image.load('img/helmet_two.png')   # шлем для космоса (с 42)
 
-        self.plane = pygame.image.load(self.android_path + 'img/plane.png').convert_alpha()     # самолет
-        self.background = pygame.image.load(self.android_path + 'img/background.png').convert_alpha()
-        self.fail = pygame.image.load(self.android_path + 'img/fail.png').convert_alpha()
+        self.plane = pygame.image.load('img/plane.png')     # самолет
+        self.background = pygame.image.load('img/background.png')
+        self.fail = pygame.image.load('img/fail.png')
         self.fail = pygame.transform.scale(self.fail, (150, 163))
-        self.arrow = pygame.image.load(self.android_path + 'img/arrow.png').convert_alpha()
+        self.arrow = pygame.image.load('img/arrow.png')
         self.arrow = pygame.transform.scale(self.arrow, (70, 35))
-        self.crown = pygame.image.load(self.android_path + 'img/crown.png').convert_alpha()
+        self.crown = pygame.image.load('img/crown.png')
         self.crown = pygame.transform.scale(self.crown, (30, 24))
-        self.color_blocks = [pygame.image.load(self.android_path + 'img/cube1.png').convert_alpha(),
-                             pygame.image.load(self.android_path + 'img/cube2.png').convert_alpha(),
-                             pygame.image.load(self.android_path + 'img/cube3.png').convert_alpha(),
-                             pygame.image.load(self.android_path + 'img/cube4.png').convert_alpha(),
-                             pygame.image.load(self.android_path + 'img/cube5.png').convert_alpha()]
-        self.left = pygame.image.load(self.android_path + 'img/left.png').convert_alpha()
-        self.left = pygame.transform.scale(self.left, (70, 70))
-        self.right = pygame.image.load(self.android_path + 'img/right.png').convert_alpha()
-        self.right = pygame.transform.scale(self.right, (70, 70))
-        self.up = pygame.image.load(self.android_path + 'img/up.png').convert_alpha()
-        self.up = pygame.transform.scale(self.up, (70, 70))
-
+        self.color_blocks = [pygame.image.load('img/cube1.png'), pygame.image.load('img/cube2.png'),
+                             pygame.image.load('img/cube3.png'), pygame.image.load('img/cube4.png'),
+                             pygame.image.load('img/cube5.png')]
 
         try:
-            pygame.mixer.music.load(self.android_path + "music/game.mp3")  # музыка при запуске игры
+            pygame.mixer.music.load("music/game.mp3")  # музыка при запуске игры
         except Exception:
             print('наушники')
 
         self.rules_font = pygame.font.SysFont("comicsansms", 24)
         self.add_font2 = pygame.font.SysFont("Times New Roman", 15)
         self.add_font = pygame.font.SysFont("Times New Roman", 30)
-        self.gameover_title = pygame.font.Font(self.android_path + "fonts/failed attempt.ttf", 70)
-        self.score_title = pygame.font.Font(self.android_path + "fonts/SUBWT___.ttf", 32)
-        self.menu_font = pygame.font.Font(self.android_path + "fonts/SUBWT___.ttf", 28)
-        self.game_title = pygame.font.Font(self.android_path + "fonts/Blox2.ttf", 98)
-        self.creators = pygame.font.Font(self.android_path + "fonts/SUBWT___.ttf", 16)
-        self.fifaks_font = pygame.font.Font(self.android_path + "fonts/Fifaks10Dev1.ttf", 24)
+        self.gameover_title = pygame.font.Font("./fonts/failed attempt.ttf", 70)
+        self.score_title = pygame.font.Font("./fonts/SUBWT___.ttf", 32)
+        self.menu_font = pygame.font.Font("./fonts/SUBWT___.ttf", 28)
+        self.game_title = pygame.font.Font("./fonts/Blox2.ttf", 98)
+        self.creators = pygame.font.Font("./fonts/SUBWT___.ttf", 16)
+        self.fifaks_font = pygame.font.Font("./fonts/Fifaks10Dev1.ttf", 24)
 
         self.taunts = [
             'В следующий раз будьте\nвнимательней!',
@@ -158,12 +149,12 @@ class tetge():
         ]
 
         self.taunts.append(f'Всего здесь {len(self.taunts) + len(self.special_taunts) + 1} надпись(ей)')
-        self.height_fly_plane = 26
+        self.height_fly_plane = 15
         self.height_helmet = 42
 
         self.now_players = 1
 
-        plr = pygame.image.load(self.android_path + 'players/' + self.skins[0]).convert_alpha()
+        plr = pygame.image.load('./players/' + self.skins[0])
         player_img = pygame.transform.scale(plr, (self.size_pl[0], self.size_pl[1]))
 
         # игроки
@@ -182,25 +173,23 @@ class tetge():
         # self.players.append(self.player_three)
 
         # скин (временно):
-        # plr = pygame.image.load(self.android_path + 'players/' + self.skins[1]).convert_alpha()
+        # plr = pygame.image.load('./players/' + self.skins[1])
         # player_img = pygame.transform.scale(plr, (self.size_pl[0], self.size_pl[1]))
         self.player_one.player_img = pygame.transform.scale(player_img, (self.size_pl[0], self.size_pl[1]))
-        self.player_two.player_img = pygame.transform.scale(pygame.image.load(self.android_path + 'players/' + self.skins[-2]).convert_alpha(), (self.size_pl[0], self.size_pl[1]))
+        self.player_two.player_img = pygame.transform.scale(pygame.image.load('./players/' + self.skins[-2]),
+                                                            (self.size_pl[0], self.size_pl[1]))
         self.player_one.helmet = self.helmet_one
         self.player_two.helmet = self.helmet_two
 
-        self.timer_animation = timer()
-        self.timer_animation2 = timer()
-
     def play_music(self, music):
         try:
-            pygame.mixer.music.load(self.android_path + f"music/{music}")  # музыка при запуске игры
+            pygame.mixer.music.load(f"music/{mus}")  # музыка при запуске игры
         except Exception:
             print('наушники')
 
     def reset(self):
         try:
-            pygame.mixer.music.load(self.android_path + "music/game.mp3")  # музыка при запуске игры
+            pygame.mixer.music.load("music/game.mp3")  # музыка при запуске игры
         except Exception:
             print('наушники')
 
@@ -212,7 +201,6 @@ class tetge():
         self.now_animation = False  # обозначает, что сейчас не происходит прорисовка падения блоков
         self.house = False
         self.time_house = 5
-        self.timer_house = timer()
         self.coor_plane = [self.field_size[0], 15]
 
         for i in range(self.field_size[0] // self.size_block):
@@ -225,7 +213,7 @@ class tetge():
         self.max_block = 1  # кол-во одновременно падующих блоков
         self.play = True
 
-        self.background_black = pygame.image.load(self.android_path + 'img/black.png').convert_alpha()
+        self.background_black = pygame.image.load('img/black.png')
         self.background_black.set_alpha(130)  # полупрозрачный черный
 
         x = self.field_size[0]//2 + 10
@@ -238,8 +226,7 @@ class tetge():
             if not self.play_music:
                 pygame.mixer.music.pause()
 
-    def __init__(self, path = '/data/data/org.test.myapp/files/app/'):
-        self.android_path = path
+    def __init__(self):
         self.DataBase()
         try:
             pygame.mixer.init()
@@ -247,6 +234,7 @@ class tetge():
         except Exception:
             print('подключите наушники')
             self.play_music = False
+
         self.menu = True
 
         self.player_choice = 0
@@ -255,6 +243,7 @@ class tetge():
         # self.mode_choice = 1    # по факту число игроков
         self.mods = ['тут выбираем режим игры', 'Classic', '2 players', '3 players']
         self.pause_play = False
+
         self.setting()
         self.reset()
 
@@ -268,12 +257,11 @@ class tetge():
 
         self.game_rules()   # правила игры (5 секунд)
         win.blit(self.background, (0, 0), (0, 2304 - 24 * 24, 24 * 18, 24 * 24))
-        t_1, t_2, t_3 = 0,0,0
-        t = timer()
+
         while 1:
             if not self.play:
                 self.death_menu()
-            pygame.time.delay(1)
+            pygame.time.delay(self.speed_game)
 
             for event in pygame.event.get():  # пауза на C
                 if event.type == pygame.KEYDOWN:
@@ -294,7 +282,14 @@ class tetge():
             if self.pause_play:
                 self.pause_menu()
             else:
-                self.win_img()
+                self.draw_background()
+                self.plane_animation()
+                self.update_win(2)
+                self.score()
+
+                for player in self.players[:self.now_players]:
+                    self.move(player)
+                pygame.display.update()
 
                 if self.block_drop_time > 0.035:
                     self.block_drop_time = self.block_drop_time_start - self.max_h / 2200 + self.t
@@ -311,22 +306,11 @@ class tetge():
 
                 if (len(self.now_blocks) < self.max_block or self.now_blocks[-1][4] == intrv) and len(self.now_blocks) < 8:
                     self.new_generation_field()
-                self.win_img()
 
-                if self.timer_animation.end() >= self.block_drop_time:
-                    self.fall_blocks()
-                    self.timer_animation = timer()
-
-    def win_img(self):
-        self.draw_background()
-        self.plane_animation()
-        self.update_win(2)
-        self.score()
-
-        for player in self.players[:self.now_players]:
-            self.move(player)
-        self.window_resize()
-        pygame.display.update()
+                if not self.now_animation:  # обрабатываем анимацию падения блоков в отдельном потоке
+                    self.now_animation = True
+                    thr_fall = threading.Thread(target=self.fall_blocks, args=(), name="fall_block")
+                    thr_fall.start()
 
     def draw_background(self):
         win.blit(self.background, (0, 0), (0, 2880 - (24 + max(0, self.max_h - 11)) * 24, 24 * 18, 24 * 24))  # отрисовка и  прокрутка заднего фона
@@ -349,11 +333,14 @@ class tetge():
 
         if not self.screenshot:
             win.blit(self.background_black, (0, 0))
+
             text1 = self.gameover_title.render('PAUSE!', True, (255, 255, 255))
             win.blit(text1, (self.field_size[0] // 4 + w, y-2*h))
 
-            self.text_resume = self.output_text('Resume', self.field_size[0] // 5 + w, y+h)
-            self.text_menu = self.output_text('Menu', self.field_size[0] // 5 + w, y + 2*h)
+            text = self.menu_font.render('Resume', False, (255, 255, 255))
+            win.blit(text, (self.field_size[0] // 5 + w, y+h))
+            text = self.menu_font.render('Menu', False, (255, 255, 255))
+            win.blit(text, (self.field_size[0] // 5 + w, y + 2*h))
 
             w -= 30
             text = self.menu_font.render('>', False, (255, 255, 255))
@@ -370,28 +357,6 @@ class tetge():
         while 1:
             self.draw_pause_menu()
             for event in pygame.event.get():
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # нажата левая кнопка мыши
-                    mouse = pygame.mouse.get_pos()
-                    if self.rect_resize(self.text_resume).collidepoint(mouse) or self.rect_resize(self.text_menu).collidepoint(mouse):    # resume
-                        self.pause_play = False
-                        try:
-                            print(pygame.mixer.music.get_busy())
-                            if not pygame.mixer.music.get_busy():
-                                pygame.mixer.music.unpause()
-                                self.play_music = True
-                        except Exception:
-                            print('подключите наушники')
-                            self.play_music = False
-                    if self.rect_resize(self.text_resume).collidepoint(mouse):
-                        return
-                    if self.rect_resize(self.text_menu).collidepoint(mouse):
-                        self.menu = True
-                        self.play = False
-                        self.now_animation = False
-                        self.house = False
-                        self.reset()
-                        return self.main_menu()
-
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_c:     # пауза на C
                         if pygame.mixer.music.get_busy():
@@ -424,7 +389,7 @@ class tetge():
                             print('подключите наушники')
                             self.play_music = False
 
-                        if self.choice == 1:  # resume
+                        if self.choice == 1:  # продолжить
                             return
                         elif self.choice == 2:  # меню
                             self.menu = True
@@ -463,13 +428,12 @@ class tetge():
         win.blit(text_dodge, (96, 140))
         win.blit(self.arrow, (self.field_size[0] // 2 - 35, 190))
 
-        self.window_resize()
         pygame.display.update()
 
         wait = 4
-        rules_time = timer()
+        start()
         skip = False
-        while rules_time.end() <= wait and not skip:
+        while end() <= wait and not skip:
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_c:     # пауза на C
@@ -511,34 +475,20 @@ class tetge():
             self.update_win(0)
             self.background_black.set_alpha(0)
 
-        # if not self.now_animation:  # обрабатываем анимацию падения блоков в отдельном потоке
-        #     self.now_animation = True
-        #     thr_fall = threading.Thread(target=self.fall_blocks, args=(), name="fall_block")
-        #     thr_fall.start()
-
-        if self.timer_animation.end() >= self.block_drop_time:
-            self.fall_blocks()
-            self.timer_animation = timer()
+        if not self.now_animation:  # обрабатываем анимацию падения блоков в отдельном потоке
+            self.now_animation = True
+            thr_fall = threading.Thread(target=self.fall_blocks, args=(), name="fall_block")
+            thr_fall.start()
 
     def move(self, player):
         """передвижение игрока"""
-        def draw_control():
-            y = self.field_size[1] + 20
-            x = self.field_size[0]//10
-            left_rect = win.blit(self.left, (x, y))
-            right_rect = win.blit(self.right, (x+90, y))
-            up_rect = win.blit(self.up, (self.field_size[0]-120, y))
-            return self.rect_resize(left_rect), self.rect_resize(right_rect), self.rect_resize(up_rect)
-        left_rect, right_rect, up_rect = draw_control()
-
         right = player.coor_player[0] + self.size_pl[0]  # "x" правой части персонажа
         bottom = player.coor_player[1] + self.size_pl[1] + 23  # "y" нижней части персонажа + после падения
 
         x_before = player.coor_player[0]  # для отражения игрока
         y_before = player.coor_player[1]
 
-        mouse = pygame.mouse.get_pos()
-        if pygame.key.get_pressed()[player.control['right']] or right_rect.collidepoint(mouse):  # ходьба в право
+        if pygame.key.get_pressed()[player.control['right']]:  # ходьба в право
             if player.direction == 2:
                 player.fm_time = 0
             if player.coor_player[0] + self.size_pl[0] + player.speed >= self.field_size[0]:  # стенка справа
@@ -568,7 +518,7 @@ class tetge():
             else:  # стенки и блока справа нет
                 player.coor_player[0] += player.speed
 
-        if pygame.key.get_pressed()[player.control['left']] or left_rect.collidepoint(mouse):  # ходьба в лево
+        if pygame.key.get_pressed()[player.control['left']]:  # ходьба в лево
             if player.direction == 1:
                 player.fm_time = 0
             if player.coor_player[0] - player.speed < 0:  # стенка слева
@@ -597,7 +547,7 @@ class tetge():
         bottom = player.coor_player[1] + self.size_pl[1] + int(
             player.jump_speed ** 2)  # "y" нижней части персонажа + после падения
 
-        if (pygame.key.get_pressed()[player.control['up']] or up_rect.collidepoint(mouse)) and not player.isjump and not player.isfall:  # прыжок
+        if pygame.key.get_pressed()[player.control['up']] and not player.isjump and not player.isfall:  # прыжок
             player.isjump = True
             player.jump_speed = 2
 
@@ -613,7 +563,7 @@ class tetge():
             else:
                 player.isfall = False
                 player.jump_speed = 1
-                player.coor_player[1] += self.size_block - ((player.coor_player[1] + self.size_pl[1] - 1) % self.size_block) - 2
+                player.coor_player[1] += self.size_block - ( (player.coor_player[1] + self.size_pl[1] - 1) % self.size_block) - 2
 
         if player.isjump:  # прыжок
             if player.jump_speed <= 1 or (self.field[player.coor_player[0] // self.size_block][len(self.field[0]) - (
@@ -668,42 +618,45 @@ class tetge():
 
     def draw_start_game_menu(self):
         win.blit(self.background_black, (0, 0))
-        w = 25  # x
-        h = 50  # y
+        w = 25
+        h = 50
         y = self.field_size[1] // 5
-        x = self.field_size[0] // 10
         text = self.gameover_title.render('START GAME', False, (255, 255, 255))
         win.blit(text, (self.field_size[0] // 9 + w, y))
         if self.choice != 0:
-            self.text_skin = self.output_text('Select skin', x + 2 * w, y + 3 * h)
+            text = self.menu_font.render('Select skin', False, (255, 255, 255))
+            win.blit(text, (self.field_size[0] // 10 + 2 * w, y + 3 * h))
         if self.choice != 1:
-            self.text_mode = self.output_text(f'Select mode: {self.mods[self.now_players]}', x + 2 * w, y + 4 * h)
+            text = self.menu_font.render(f'Select mode: {self.mods[self.now_players]}', False, (255, 255, 255))
+            win.blit(text, (self.field_size[0] // 10 + 2 * w, y + 4 * h))
+        text = self.menu_font.render('Start', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 10 + 2 * w, y + 5.5 * h))
+        text = self.menu_font.render('Back', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 10 + 2 * w, y + 7 * h))
 
-        self.text_start_game = self.output_text('Start', self.field_size[0] // 10 + 2 * w, y + 5.5 * h)
-        self.text_back_start = self.output_text('Back', self.field_size[0] // 10 + 2 * w, y + 7 * h)
 
         text = self.menu_font.render('>', False, (255, 255, 255))
         if self.choice == 0:  # skin
             if self.choice_pl == False:  # выбор скина
-                self.text_skin_prev = self.output_text('<', self.field_size[0] // 10 + w, y + (3 + self.choice) * h)
+                text = self.menu_font.render('<      >', False, (255, 255, 255))
+                win.blit(text, (self.field_size[0] // 10 + w, y + (3 + self.choice) * h))
 
-                plr = pygame.image.load(self.android_path + 'players/' + self.skins[self.skin_choice]).convert_alpha()
+                plr = pygame.image.load('./players/' + self.skins[self.skin_choice])
                 self.players[self.player_choice].player_img = pygame.transform.scale(plr, (self.size_pl[0], self.size_pl[1]))
                 self.players[self.player_choice].img = self.skins[self.skin_choice]
-                self.skin_coor = plr.get_rect(center = self.text_rect_left(plr, self.field_size[0] // 10 + w + 43, y + (3 + self.choice) * h ))
 
-                self.text_skin_next = self.output_text('>', self.skin_coor[0] + 55, self.skin_coor[1])
                 plr = pygame.transform.scale(plr, (int(self.size_pl[0] * 1.5), int(self.size_pl[1] * 1.5)))
-                win.blit(plr, self.skin_coor)
+                prec = plr.get_rect(center=(self.field_size[0] // 10 + w + 43, y + (3 + self.choice) * h + 15))
+
+                win.blit(plr, prec)
             else:   # выбор игрока
-                self.text_player = self.output_text(f'Player {self.player_choice+1}', self.field_size[0] // 10 + w*2, y + (3 + self.choice) * h)
-                self.text_player_prev = self.output_text('<', self.field_size[0] // 10 + w, y + (3 + self.choice) * h)
-                self.text_player_next = self.output_text('>', self.text_player[0]+self.text_player[2]+8, y + (3 + self.choice) * h)
+                text = self.menu_font.render(f'< Player {self.player_choice+1} >', False, (255, 255, 255))
+                win.blit(text, (self.field_size[0] // 10 + w, y + (3 + self.choice) * h))
 
         elif self.choice == 1:  # режим
-            text_mode = self.output_text(f'{self.mods[self.now_players]}', self.field_size[0] // 10 + w * 2, y + 4 * h)
-            self.text_mode_prev = self.output_text('<', self.field_size[0] // 10 + w, y + 4 * h)
-            self.text_mode_next = self.output_text('>', text_mode[0] + text_mode[2] + 8, y + (3 + self.choice) * h)
+            text = self.menu_font.render(f'< {self.mods[self.now_players]} >', False, (255, 255, 255))
+            win.blit(text, (self.field_size[0] // 10 + w, y + 4 * h))
+
 
         else:
             win.blit(text, (self.field_size[0] // 10 + w, y + (3 + self.choice) * h))
@@ -711,66 +664,44 @@ class tetge():
 
     def start_game_menu(self):
         self.draw_start_game_menu()
+        w = 25
+        h = 50
 
         while self.menu2:
-            self.window_resize()
-            if self.timer_animation.end() >= self.block_drop_time:
+            if not self.now_animation:
                 self.animation()
 
-            for event in pygame.event.get():
+            for event in pygame.event.get():  # пауза на C
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
 
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # нажата левая кнопка мыши
-                    mouse = pygame.mouse.get_pos()
-                    if self.choice != 0 and self.rect_resize(self.text_skin).collidepoint(mouse): # select skin
-                        self.choice = 0
-                    elif self.rect_resize(self.text_start_game).collidepoint(mouse):  # cтарт
-                        self.menu2 = False
-                        self.reset()
-                    elif self.rect_resize(self.text_back_start).collidepoint(mouse):  # back
-                        self.menu2 = False
-                        self.menu = True
-                    elif self.rect_resize(self.text_mode).collidepoint(mouse) and self.choice != 1:    # mode
-                        self.choice = 1
-                    elif self.choice == 1:  # выбор режима
-                        if self.rect_resize(self.text_mode_prev).collidepoint(mouse):
-                            self.now_players -= 1
-                            if self.now_players < 1:
-                                self.now_players = len(self.players)
-                        elif self.rect_resize(self.text_mode_next).collidepoint(mouse):
-                            self.now_players += 1
-                            if self.now_players == len(self.players) + 1:
-                                self.now_players = 1
-                    elif self.choice_pl == True and self.choice == 0:  # выбор игрока
-                        if self.rect_resize(self.text_player).collidepoint(mouse):
-                            if self.choice_pl == False:  # номер игрока
-                                self.choice_pl = True
-                            else:  # скин
-                                self.choice_pl = False
-                        elif self.rect_resize(self.text_player_prev).collidepoint(mouse): # select player <
-                            self.player_choice -= 1
-                            if self.player_choice < 0:
-                                self.player_choice = len(self.players) - 1
-                        elif self.rect_resize(self.text_player_next).collidepoint(mouse): # select player >
-                            self.player_choice += 1
-                            if self.player_choice == len(self.players):
-                                self.player_choice = 0
-                    elif self.choice_pl == False and self.choice == 0:  # выбор скина
-                        if self.rect_resize(self.text_skin_prev).collidepoint(mouse):    # select skin <
-                            self.skin_choice -= 1
-                            if self.skin_choice < 0:
-                                self.skin_choice = len(self.skins) - 1
-                        elif self.rect_resize(self.text_skin_next).collidepoint(mouse):   # select skin <
-                            self.skin_choice += 1
-                            if self.skin_choice == len(self.skins):
-                                self.skin_choice = 0
-                        elif self.rect_resize(self.skin_coor).collidepoint(mouse):
-                            self.choice_pl = True
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if (event.button == 1):  # нажата левая кнопка
+                        if (event.pos[0] >= self.field_size[0] // 10 + 2 * w - 30 and event.pos[1] >= self.field_size[1] // 5 + 3 * h and event.pos[0] <= self.field_size[0] // 10 + 2 * w + 105 and event.pos[1] <= self.field_size[1] // 5 + 3 * h + 40):  # cтарт
+                            if self.choice != 0:
+                                self.choice = 0
+                            elif event.pos[0] <= self.field_size[0] // 10 + 2 * w - 10 + 15:
+                                self.skin_choice -= 1
+                                if self.skin_choice < 0:
+                                    self.skin_choice = len(self.skins) - 1
+                            elif event.pos[0] >= self.field_size[0] // 10 + 2 * w + 105 - 65:
+                                self.skin_choice += 1
+                                if self.skin_choice == len(self.skins):
+                                    self.skin_choice = 0
+                        elif event.pos[0] >= self.field_size[0] // 10 + 2 * w and event.pos[1] >= self.field_size[
+                            1] // 5 + 5.5 * h and event.pos[0] <= self.field_size[0] // 10 + 2 * w + 105 and event.pos[
+                            1] <= self.field_size[1] // 5 + 5.5 * h + 40:  # cтарт
+                            self.menu2 = False
+                            self.reset()
+                        elif event.pos[0] >= self.field_size[0] // 10 + 2 * w and event.pos[1] >= self.field_size[
+                            1] // 5 + 7 * h and event.pos[0] <= self.field_size[0] // 10 + 2 * w + 105 and event.pos[
+                            1] <= self.field_size[1] // 5 + 7 * h + 40:  # cтарт
+                            self.menu2 = False
+                            self.menu = True
 
-                if event.type == pygame.KEYDOWN:    # нажатие клавишы
-                    if event.key == pygame.K_c: # музыка
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_c:
                         if pygame.mixer.music.get_busy():
                             pygame.mixer.music.pause()
                             self.play_music = False
@@ -817,7 +748,7 @@ class tetge():
                                 if self.player_choice < 0:
                                     self.player_choice = len(self.players) - 1
 
-                    elif self.choice == 1:  # mode
+                    elif self.choice == 1:
                         if event.key == pygame.K_RIGHT:
                             self.now_players += 1
                             if self.now_players == len(self.players)+1:
@@ -833,13 +764,14 @@ class tetge():
                             if self.choice_pl == False: # номер игрока
                                 self.choice_pl = True
                             else:   # скин
+
                                 self.choice_pl = False
                         elif self.choice == 1:  # режим
                             pass
 
                         elif self.choice == 2.5:  # cтарт
                             # if self.skins[self.skin_choice] == 'player5.png':
-                            #     icon = pygame.image.load(self.android_path + 'img/brawl.png').convert_alpha()
+                            #     icon = pygame.image.load('img/brawl.png')
                             #     icon = pygame.transform.scale(icon, (64, 64))
                             #     pygame.display.set_icon(icon)
                             self.menu2 = False
@@ -856,53 +788,39 @@ class tetge():
                         self.choice = 0
 
     def draw_main_menu(self):
-        def title_tetge(string, color, y):
-            x = (self.field_size[0] - self.game_title.render(string, False, (0,0,0)).get_size()[0])//2 + 10
-            for char in string:
-                text = self.game_title.render(char, False, color[char])
-                text_coor = text.get_rect(center=(x, y))
-                win.blit(text, text_coor)
-                x += text_coor[2] + 8
-
-        win.blit(self.background_black, (0, 0)) # полупрозрачный
+        win.blit(self.background_black, (0, 0))
+        s = 52
+        w = 20
         y = self.field_size[1] // 5
 
-        s = 40
-        w = 10
+        text = self.game_title.render('T', False, (80, 41, 255))
+        win.blit(text, (self.field_size[0] // 2 - 2 * s - w, y))
+        win.blit(text, (self.field_size[0] // 2 - w, y))
+        text = self.game_title.render('E', False, (255, 30, 0))
+        win.blit(text, (self.field_size[0] // 2 - s - w, y))
+        text = self.game_title.render('G', False, (59, 255, 0))
+        win.blit(text, (self.field_size[0] // 2 + s * 1 - w, y))
+        text = self.game_title.render('E', False, (196, 0, 255))
+        win.blit(text, (self.field_size[0] // 2 + s * 2 - w, y))
 
-        # text = self.game_title.render('T', False, (80, 41, 255))
-        # win.blit(text, (self.field_size[0] // 2 - 2 * s - w, y))
-        # win.blit(text, (self.field_size[0] // 2 - w, y))
-        # text = self.game_title.render('E', False, (255, 30, 0))
-        # win.blit(text, (self.field_size[0] // 2 - s - w, y))
-        # text = self.game_title.render('G', False, (59, 255, 0))
-        # win.blit(text, (self.field_size[0] // 2 + s * 1 - w, y))
-        # text = self.game_title.render('E', False, (196, 0, 255))
-        # win.blit(text, (self.field_size[0] // 2 + s * 2 - w, y))
-
-        title_tetge('TETGE', {'T':(80, 41, 255), 'E':(255, 30, 0), 'G':(59, 255, 0)}, y)
         w = 20
         h = 50
         y = self.field_size[1] // 2
-        x = self.field_size[0] // 5
 
-        self.text_start = self.output_text('Start', x + w, y)
-        self.text_score = self.output_text('Scores', x + w, y + h)
-        self.text_exit = self.output_text('Exit', x + w, y + h * 2)
+        text = self.menu_font.render('Start', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 5 + w, y))
+        text = self.menu_font.render('Scores', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 5 + w, y + h))
+        text = self.menu_font.render('Exit', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 5 + w, y + h * 2))
 
         text = self.creators.render('© MurkyShadow, ToPzSpAy, dogganovich68', False, (255, 255, 255))
-        win.blit(text, (x - 55, self.field_size[1] - 30))
+        win.blit(text, (self.field_size[0] // 5 - 55, self.field_size[1] - 30))
 
         w -= 30
         text = self.menu_font.render('>', False, (255, 255, 255))
-        win.blit(text, (x + w, y + h * self.choice))
-
+        win.blit(text, (self.field_size[0] // 5 + w, y + h * self.choice))
         pygame.display.update()
-
-    def rect_resize(self, rect):
-        for i in range(4):
-            rect[i] = int(multi*rect[i])
-        return rect
 
     def main_menu(self):
         self.play = False
@@ -915,9 +833,10 @@ class tetge():
         self.block_drop_time = 0.07
 
         self.choice = 0
+
         try:
             if not pygame.mixer.music.get_busy():
-                pygame.mixer.music.load(self.android_path + "music/menu.mp3")
+                pygame.mixer.music.load("music/menu.mp3")
                 pygame.mixer.music.play(-1)
                 if not self.play_music:
                     pygame.mixer.music.pause()
@@ -926,8 +845,7 @@ class tetge():
             self.play_music = False
 
         while self.menu:
-            self.window_resize()
-            if self.timer_animation.end() >= self.block_drop_time:
+            if not self.now_animation:
                 self.animation()
 
             for event in pygame.event.get():  # пауза на C
@@ -935,23 +853,27 @@ class tetge():
                     pygame.quit()
                     sys.exit()
 
-                if event.type == pygame.MOUSEBUTTONDOWN and (event.button == 1):  # нажата левая кнопка мыши
-                    mouse = pygame.mouse.get_pos()
-                    # print(self.text_start)
-                    # print(self.rect_resize(self.text_start))
-                    if self.rect_resize(self.text_start).collidepoint(mouse):  # cтарт
-                        self.choice = 0
-                        self.menu = False
-                        self.menu2 = True
-                        self.start_game_menu()
-                    elif self.rect_resize(self.text_score).collidepoint(mouse):    # scoreboard
-                        self.choice = 0
-                        self.menu = False
-                        self.scoreboard = True
-                        self.start_scoreboard()
-                    elif self.rect_resize(self.text_exit).collidepoint(mouse):  # exit
-                        pygame.quit()
-                        sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if (event.button == 1):  # нажата левая кнопка
+                        if (event.pos[0] >= self.field_size[0] // 5 + 20 and event.pos[1] >= self.field_size[1] // 2 and
+                                event.pos[0] <= self.field_size[0] // 5 + 20 + 105 and event.pos[1] <= self.field_size[
+                                    1] // 2 + 40):  # cтарт
+                            self.choice = 0
+                            self.menu = False
+                            self.menu2 = True
+                            self.start_game_menu()
+                        elif (event.pos[0] >= self.field_size[0] // 5 + 20 and event.pos[1] >= self.field_size[
+                            1] // 2 + 50 and event.pos[0] <= self.field_size[0] // 5 + 20 + 105 and event.pos[1] <=
+                              self.field_size[1] // 2 + 40 + 50):  # scoreboard
+                            self.choice = 0
+                            self.menu = False
+                            self.scoreboard = True
+                            self.start_scoreboard()
+                        elif (event.pos[0] >= self.field_size[0] // 5 + 20 and event.pos[1] >= self.field_size[
+                            1] // 2 + 100 and event.pos[0] <= self.field_size[0] // 5 + 20 + 105 and event.pos[1] <=
+                              self.field_size[1] // 2 + 40 + 100):  # scoreboard:
+                            pygame.quit()
+                            sys.exit()
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_c:
@@ -997,8 +919,7 @@ class tetge():
 
         self.draw_scoreboard()
         while self.scoreboard:
-            self.window_resize()
-            if self.timer_animation.end() >= self.block_drop_time:
+            if not self.now_animation:
                 self.animation()
 
             for event in pygame.event.get():  # пауза на C
@@ -1006,11 +927,13 @@ class tetge():
                     pygame.quit()
                     sys.exit()
 
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # нажата левая кнопка мыши
-                    mouse = pygame.mouse.get_pos()
-                    if self.rect_resize(self.text_back_score).collidepoint(mouse):    # назад в главное меню
-                        self.scoreboard = False
-                        self.menu = True
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if (event.button == 1):  # нажата левая кнопка
+                        if (self.field_size[0] // 10 + 25 and event.pos[1] >= self.field_size[1] // 7 + 8.5 * 50 and
+                                event.pos[0] <= self.field_size[0] // 10 + 25 + 105 and event.pos[1] <= self.field_size[
+                                    1] // 7 + 8.5 * 50 + 40):  # cтарт
+                            self.scoreboard = False
+                            self.menu = True
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_c:
@@ -1029,17 +952,19 @@ class tetge():
         w = 25
         h = 50
         y = self.field_size[1] // 7
-        x = self.field_size[0] // 10
         text = self.gameover_title.render('SCOREBOARD', False, (255, 255, 255))
-        win.blit(text, (x, y))
-        win.blit(self.crown, (x, y))
+        win.blit(text, (self.field_size[0] // 10, y))
 
-        self.text_back_score = self.output_text('Back',  x+w, y + 8.5 * h)
-        self.output_text('>', x, y + 8.5 * h)
+        win.blit(self.crown, (self.field_size[0] // 10, y))
+
+        text = self.menu_font.render('Back', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 10 + w, y + 8.5 * h))
+
+        text = self.menu_font.render('>', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 10, y + 8.5 * h))
 
         text = self.menu_font.render('Score', False, (255, 255, 255))
-        win.blit(text, (x + w, y + 2 * h))
-
+        win.blit(text, (self.field_size[0] // 10 + w, y + 2 * h))
         text = self.menu_font.render('Time', False, (255, 255, 255))
         win.blit(text, (self.field_size[0] // 2 - w - w, y + 2 * h))
 
@@ -1060,21 +985,13 @@ class tetge():
 
         pygame.display.update()
 
-    def text_rect_left(self, text, x, y):   # координаты для левой верхней точки вывода текста
-        return (x+text.get_rect()[2]//2, y+text.get_rect()[3]//2)
-
-    def output_text(self, string, x, y):
-        text = self.menu_font.render(string, False, (255, 255, 255))
-        text_coord = text.get_rect(center = self.text_rect_left(text, x, y))
-        win.blit(text, text_coord)
-        return text_coord
-
     def score(self):
         text_surface = self.score_title.render('Score: ' + str(self.max_h), False, (242, 243, 244))
         win.blit(text_surface, (0, 0))
 
     def update_win(self, update=1):
         """при смене уровня карты, перерисовывает все окно"""
+        # win.fill((0, 0, 0))
         y_win = 24
         for y in range(len(self.field[0]) - 28, len(self.field[0]) - 4):
             y_win -= 1
@@ -1112,15 +1029,14 @@ class tetge():
         else:
             pygame.display.update()
 
-
-        # time.sleep(self.block_drop_time)
-        self.timer_animation = timer()
-        # self.now_animation = False
+        time.sleep(self.block_drop_time)
+        self.now_animation = False
 
     def place_fall(self, block):
         """выбираем место для падения блока"""
         min_height = min(self.height)
-        min_now = randint(1, self.height.count(min_height))  # если минимальных чисел несколько, то среди них выбираем рандомно
+        min_now = randint(1, self.height.count(
+            min_height))  # если минимальных чисел несколько, то среди них выбираем рандомно
         count_same = 0
         for i, h in enumerate(self.height):
             if h == min_height:
@@ -1148,7 +1064,8 @@ class tetge():
                 for i in range(0, len(block)):
                     now_space += (stop_h + block[i].count(0) - self.height[x + i])
                 if now_space < x_info[1] or (now_space == x_info[1] and stop_h < x_info[2]) or \
-                        (now_space == x_info[1] and stop_h == x_info[2] and randint(0, 1) and block != [[1, 1, 1, 1]]):  # палку ставим вплотную
+                        (now_space == x_info[1] and stop_h == x_info[2] and randint(0, 1) and block != [
+                            [1, 1, 1, 1]]):  # палку ставим вплотную
                     x_info[2] = stop_h
                     x_info[1] = now_space
                     x_info[0] = x
@@ -1191,13 +1108,13 @@ class tetge():
         elif self.play == True and self.field[player.coor_player[0] // 24][len(self.field[0]) - 5 + 1 - player.coor_player[1] // 24] >= 1 \
             and (player.coor_player[0] // 24 - 1 == -1 or self.field[player.coor_player[0] // 24 - 1][ len(self.field[0]) - 5 - player.coor_player[1] // 24] >= 1) \
             and (player.coor_player[0] // 24 + 1 == 18 or self.field[player.coor_player[0] // 24 + 1][len(self.field[0]) - 5 - player.coor_player[1] // 24]):
-            if self.house and int(self.timer_house.end()) >= self.time_house:
+            if self.house and int(end()) >= self.time_house:
                 self.play = False
                 self.now_animation = True
                 return True
             elif not self.house:
                 self.house = True
-                self.timer_house = timer()
+                start()
         return False
 
     def fall(self, block, stop_h, place, y, y_win, color):
@@ -1253,9 +1170,8 @@ class tetge():
         self.insert_in_scoreboard()
         print('вы проиграли!')
         self.score()
-        # w, h = pygame.display.get_surface().get_size()
-        w, h = self.field_size[0], self.field_size[1]
-        pygame.draw.rect(win, (0, 0, 0), (0, 0, w, h+150))
+        w, h = pygame.display.get_surface().get_size()
+        pygame.draw.rect(win, (0, 0, 0), (0, 0, w, h))
         text1 = self.gameover_title.render('GAME OVER!', True, (255, 255, 255))
         text_rect = text1.get_rect(center=(w / 2, h / 2 - 190))
         win.blit(text1, text_rect)
@@ -1299,52 +1215,38 @@ class tetge():
         h = 50
         y = self.field_size[1] // 2
 
-
-        # text = self.menu_font.render('Retry', False, (255, 255, 255))
-        # win.blit(text, (self.field_size[0] // 5 + w, y))
-        rect_retry = self.output_text('Retry', self.field_size[0] // 5 + w, y)
-
-        # text = self.menu_font.render('Menu', False, (255, 255, 255))
-        # win.blit(text, (self.field_size[0] // 5 + w, y + h))
-        rect_menu = self.output_text('Menu', self.field_size[0] // 5 + w, y + h)
+        text = self.menu_font.render('Retry', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 5 + w, y))
+        text = self.menu_font.render('Menu', False, (255, 255, 255))
+        win.blit(text, (self.field_size[0] // 5 + w, y + h))
 
         w -= 30
         text = self.menu_font.render('>', False, (255, 255, 255))
         win.blit(text, (self.field_size[0] // 5 + w, y))
 
-        self.window_resize()
         pygame.display.update()
 
         choice = 0
         while 1:
-            self.window_resize()
             events = list(pygame.event.get())
             for event in events:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
 
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # нажата левая кнопка мыши
-                    mouse = pygame.mouse.get_pos()
-                    if self.rect_resize(rect_retry).collidepoint(mouse):    # retry
-                        self.reset()
-                        return True
-                    if self.rect_resize(rect_menu).collidepoint(mouse):     # menu
-                        self.menu = True
-                        self.reset()
-                        self.main_menu()
-                        return True
-                        # if (event.pos[0] >= self.field_size[0] // 5 + w and event.pos[1] >= self.field_size[1] // 2 and
-                        #         event.pos[0] <= self.field_size[0] // 5 + w + 105 and event.pos[1] <= self.field_size[1] // 2 + 40):  # cтарт
-                        #     self.reset()
-                        #     return True
-                        # elif (event.pos[0] >= self.field_size[0] // 5 + w and event.pos[1] >= self.field_size[
-                        #     1] // 2 + 50 and event.pos[0] <= self.field_size[0] // 5 + w + 105 and event.pos[1] <=
-                        #       self.field_size[1] // 2 + 40 + 50):  # cтарт
-                        #     self.menu = True
-                        #     self.reset()
-                        #     self.main_menu()
-                        #     return True
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if (event.button == 1):  # нажата левая кнопка
+                        if (event.pos[0] >= self.field_size[0] // 5 + w and event.pos[1] >= self.field_size[1] // 2 and
+                                event.pos[0] <= self.field_size[0] // 5 + w + 105 and event.pos[1] <= self.field_size[1] // 2 + 40):  # cтарт
+                            self.reset()
+                            return True
+                        elif (event.pos[0] >= self.field_size[0] // 5 + w and event.pos[1] >= self.field_size[
+                            1] // 2 + 50 and event.pos[0] <= self.field_size[0] // 5 + w + 105 and event.pos[1] <=
+                              self.field_size[1] // 2 + 40 + 50):  # cтарт
+                            self.menu = True
+                            self.reset()
+                            self.main_menu()
+                            return True
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
@@ -1352,14 +1254,12 @@ class tetge():
                         if choice == 1:
                             choice = 0
                         win.blit(text, (self.field_size[0] // 5 + w, y + h * choice))
-                        self.window_resize()
                         pygame.display.update()
                     if event.key == pygame.K_DOWN:
                         win.fill((0, 0, 0), (self.field_size[0] // 5 + w, y + h * choice, 16, 32))  # стираем
                         if choice == 0:
                             choice = 1
                         win.blit(text, (self.field_size[0] // 5 + w, y + h * choice))
-                        self.window_resize()
                         pygame.display.update()
                     if event.key == pygame.K_RETURN:
                         if choice == 0:  # cтарт
@@ -1395,67 +1295,12 @@ class tetge():
         ) """)
         self.cur.close()
 
-    def window_resize(self):
-        scaled_surface = pygame.transform.scale(win, (int(18 * 24 * multi), int((24 * 24+150) * multi)))
-        main_win.blit(scaled_surface, (0, 0))
-        # pass
-
-# def out(s):
-#     pass
-#     font = pygame.font.SysFont("comicsansms", 24)
-#     text = font.render(s, False, (255, 255, 255))
-#     win.fill((255, 0, 0), ((2, int(12)), (31, 31)))
-#     win.blit(text, (10, 10))
-#     pygame.display.update()
-#     time.sleep(3)
-
 if __name__ == "__main__":
-    x = 100
-    y = 45
-    # os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (x, y)
     pygame.init()
-    win_size = [18 * 24, 24 * 24]
+    pygame.display.set_caption('Tetge')
+    icon = pygame.image.load('img/icon.ico')
+    pygame.display.set_icon(icon)
 
-    # game_title = pygame.font.Font("fonts/Blox2.ttf", 98)
-    # print(game_title.render("TETGE", False, (0,0,0)).get_size())
-
-    # pygame.display.set_caption('Tetge')
-
-    # icon = pygame.image.load('/data/data/org.test.myapp/files/app/'+'img/icon.png').convert_alpha()
-    # pygame.display.set_icon(icon)//
-    try:
-        multi = pygame.display.Info().current_h/(win_size[1]+150)  # во сколько  раз растянуть экран
-        # multi = 1
-        # print(multi)
-        # print('экран', pygame.display.Info().current_h, pygame.display.Info().current_w)
-        # print('итоговый экран', multi*win_size[1], multi*win_size[0])
-        if multi*win_size[0]<=pygame.display.Info().current_w+1:      # подгоняем экран для компа
-            main_win = pygame.display.set_mode((int(18 * 24 * multi), int((24 * 24+150) * multi)), RESIZABLE)
-            win = pygame.Surface((int(18 * 24), int(24 * 24+150)))
-            game = tetge('')
-        else:               # экран для телефона
-            multi = pygame.display.Info().current_w / win_size[0]
-            main_win = pygame.display.set_mode((int(18 * 24 * multi), int((24 * 24+150) * multi)))
-            win = pygame.Surface((int(18 * 24), int(24 * 24+150)))
-            game = tetge()
-
-    except Exception as er: # если ошибка, то выводим
-        main_win = pygame.display.set_mode((700, 100))
-
-        font = pygame.font.SysFont("comicsansms", 22)
-        text = font.render('ERROR '+str(er), False, (255, 255, 255))
-        main_win.blit(text, (10, 10))
-        pygame.display.update()
-        while 1:
-            pass
-
-
-    #     game = tetge()
-    # except Exception:
-    #     font = pygame.font.SysFont("comicsansms", 24)
-    #     text = font.render('ERROR', False, (255, 255, 255))
-    #     win.blit(text, (10, 10))
-    #     pygame.display.update()
-    #     while 1:
-    #         pass
+    win = pygame.display.set_mode((24 * 18, 24 * 24))
+    game = tetge()
 
