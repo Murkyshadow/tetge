@@ -19,7 +19,6 @@ class timer():
     def end(self):
         return float("%.2f" % (time.time() - self.st))
 
-
 class character():
     def set_player(self, coor_player, control={'left':pygame.K_LEFT, 'up':pygame.K_UP, 'right':pygame.K_RIGHT}, img = 1):
         # self.max_h = max_h  # значение максимальной достигнутой высоты персонажем, но пока оставим максимальную
@@ -1426,6 +1425,7 @@ if __name__ == "__main__":
     try:
         multi = pygame.display.Info().current_h/(win_size[1]+150)  # во сколько  раз растянуть экран
         # multi = 1
+        awd
         # print(multi)
         # print('экран', pygame.display.Info().current_h, pygame.display.Info().current_w)
         # print('итоговый экран', multi*win_size[1], multi*win_size[0])
@@ -1434,17 +1434,33 @@ if __name__ == "__main__":
             win = pygame.Surface((int(18 * 24), int(24 * 24+150)))
             game = tetge('')
         else:               # экран для телефона
+
             multi = pygame.display.Info().current_w / win_size[0]
             main_win = pygame.display.set_mode((int(18 * 24 * multi), int((24 * 24+150) * multi)))
             win = pygame.Surface((int(18 * 24), int(24 * 24+150)))
             game = tetge()
 
-    except Exception as er: # если ошибка, то выводим
-        main_win = pygame.display.set_mode((700, 100))
+    except Exception as er:     # если ошибка, то выводим
+        win_size = (pygame.display.Info().current_w, pygame.display.Info().current_h-50)
+        main_win = pygame.display.set_mode(win_size)
+        font = pygame.font.SysFont("comicsansms", 55)
+        words = str(er).split()
+        before_line = ''
+        line = 'ERROR'
+        y = 10
+        for word in words:
+            before_line = line
+            line += ' ' + word
+            text = font.render(line,False, (255, 255, 255))
+            print(text.get_size()[0])
+            print(line)
+            if text.get_size()[0] >= win_size[0]:
+                main_win.blit(font.render(before_line,False, (255, 255, 255)), (10, y))
+                y += 40
+                line = word
+        main_win.blit(font.render(line, False, (255, 255, 255)), (10, y))
 
-        font = pygame.font.SysFont("comicsansms", 22)
-        text = font.render('ERROR '+str(er), False, (255, 255, 255))
-        main_win.blit(text, (10, 10))
+        # text = font.render('ERROR '+str(er), False, (255, 255, 255))
         pygame.display.update()
         while 1:
             pass
