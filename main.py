@@ -257,7 +257,7 @@ class tetge():
         self.setting()
         self.reset()
 
-        self.main_menu()
+        # self.main_menu()
         self.reset()
 
         win.blit(self.background, (0, 0), (0, 2880 - 24 * 24, 24 * 18, 24 * 24))
@@ -267,25 +267,23 @@ class tetge():
 
         self.game_rules()   # правила игры (5 секунд)
         win.blit(self.background, (0, 0), (0, 2304 - 24 * 24, 24 * 18, 24 * 24))
-        t_1, t_2, t_3 = 0,0,0
-        t = timer()
         while 1:
             if not self.play:
                 self.death_menu()
-            pygame.time.delay(1)
+            # pygame.time.delay(1)
 
             for event in pygame.event.get():  # пауза на C
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_c:
-                        if pygame.mixer.music.get_busy():
-                            pygame.mixer.music.pause()
-                            self.play_music = False
-                        else:
-                            pygame.mixer.music.unpause()
-                            self.play_music = True
-                    if event.key == pygame.K_ESCAPE:
-                        self.pause_play = True
-
+            #     if event.type == pygame.KEYDOWN:
+            #         if event.key == pygame.K_c:
+            #             if pygame.mixer.music.get_busy():
+            #                 pygame.mixer.music.pause()
+            #                 self.play_music = False
+            #             else:
+            #                 pygame.mixer.music.unpause()
+            #                 self.play_music = True
+            #         if event.key == pygame.K_ESCAPE:
+            #             self.pause_play = True
+            #
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
@@ -295,26 +293,27 @@ class tetge():
             else:
                 self.win_img()
 
-                if self.block_drop_time > 0.035:
-                    self.block_drop_time = self.block_drop_time_start - self.max_h / 2200 + self.t
-                else:
-                    self.t += 0.009
-                    self.block_drop_time += self.t
-                    if self.max_block < 7:
-                        self.max_block += 1
+                # if self.block_drop_time > 0.035:
+                #     self.block_drop_time = self.block_drop_time_start - self.max_h / 2200 + self.t
+                # else:
+                #     self.t += 0.009
+                #     self.block_drop_time += self.t
+                #     if self.max_block < 7:
+                #         self.max_block += 1
 
-                if 24 - self.max_h // 2 > 4:
-                    intrv = 24 - self.max_h // 2
-                else:
-                    intrv = 4
+                # if 24 - self.max_h // 2 > 4:
+                #     intrv = 24 - self.max_h // 2
+                # else:
+                #     intrv = 4
 
-                if (len(self.now_blocks) < self.max_block or self.now_blocks[-1][4] == intrv) and len(self.now_blocks) < 8:
-                    self.new_generation_field()
-                self.win_img()
+                # if (len(self.now_blocks) < self.max_block or self.now_blocks[-1][4] == intrv) and len(self.now_blocks) < 8:
+                #     self.new_generation_field()
+                # self.win_img()
+                pygame.display.update()
 
-                if self.timer_animation.end() >= self.block_drop_time:
-                    self.fall_blocks()
-                    self.timer_animation = timer()
+                # if self.timer_animation.end() >= self.block_drop_time:
+                #     self.fall_blocks()
+                #     self.timer_animation = timer()
 
     def win_img(self):
         self.draw_background()
@@ -324,8 +323,6 @@ class tetge():
 
         for player in self.players[:self.now_players]:
             self.move(player)
-        self.window_resize()
-        pygame.display.update()
 
     def draw_background(self):
         win.blit(self.background, (0, 0), (0, 2880 - (24 + max(0, self.max_h - 11)) * 24, 24 * 18, 24 * 24))  # отрисовка и  прокрутка заднего фона
@@ -521,14 +518,14 @@ class tetge():
 
     def move(self, player):
         """передвижение игрока"""
-        def draw_control():
-            y = self.field_size[1] + 20
-            x = self.field_size[0]//10
-            left_rect = win.blit(self.left, (x, y))
-            right_rect = win.blit(self.right, (x+90, y))
-            up_rect = win.blit(self.up, (self.field_size[0]-120, y))
-            return self.rect_resize(left_rect), self.rect_resize(right_rect), self.rect_resize(up_rect)
-        left_rect, right_rect, up_rect = draw_control()
+        # def draw_control():
+        #     y = self.field_size[1] + 20
+        #     x = self.field_size[0]//10
+        #     left_rect = win.blit(self.left, (x, y))
+        #     right_rect = win.blit(self.right, (x+90, y))
+        #     up_rect = win.blit(self.up, (self.field_size[0]-120, y))
+        #     return self.rect_resize(left_rect), self.rect_resize(right_rect), self.rect_resize(up_rect)
+        # left_rect, right_rect, up_rect = draw_control()
 
         right = player.coor_player[0] + self.size_pl[0]  # "x" правой части персонажа
         bottom = player.coor_player[1] + self.size_pl[1] + 23  # "y" нижней части персонажа + после падения
@@ -537,7 +534,7 @@ class tetge():
         y_before = player.coor_player[1]
 
         mouse = pygame.mouse.get_pos()
-        if pygame.key.get_pressed()[player.control['right']] or right_rect.collidepoint(mouse):  # ходьба в право
+        if pygame.key.get_pressed()[player.control['right']]:  # ходьба в право
             if player.direction == 2:
                 player.fm_time = 0
             if player.coor_player[0] + self.size_pl[0] + player.speed >= self.field_size[0]:  # стенка справа
@@ -567,7 +564,7 @@ class tetge():
             else:  # стенки и блока справа нет
                 player.coor_player[0] += player.speed
 
-        if pygame.key.get_pressed()[player.control['left']] or left_rect.collidepoint(mouse):  # ходьба в лево
+        if pygame.key.get_pressed()[player.control['left']]:  # ходьба в лево
             if player.direction == 1:
                 player.fm_time = 0
             if player.coor_player[0] - player.speed < 0:  # стенка слева
@@ -596,7 +593,7 @@ class tetge():
         bottom = player.coor_player[1] + self.size_pl[1] + int(
             player.jump_speed ** 2)  # "y" нижней части персонажа + после падения
 
-        if (pygame.key.get_pressed()[player.control['up']] or up_rect.collidepoint(mouse)) and not player.isjump and not player.isfall:  # прыжок
+        if (pygame.key.get_pressed()[player.control['up']]) and not player.isjump and not player.isfall:  # прыжок
             player.isjump = True
             player.jump_speed = 2
 
@@ -1395,9 +1392,9 @@ class tetge():
         self.cur.close()
 
     def window_resize(self):
-        scaled_surface = pygame.transform.scale(win, (int(18 * 24 * multi), int((24 * 24+150) * multi)))
-        main_win.blit(scaled_surface, (0, 0))
-        # pass
+        #scaled_surface = pygame.transform.scale(win, (int(18 * 24 * multi), int((24 * 24+150) * multi)))
+        #main_win.blit(scaled_surface, (0, 0))
+        pass
 
 # def out(s):
 #     pass
@@ -1425,19 +1422,20 @@ if __name__ == "__main__":
     try:
         multi = pygame.display.Info().current_h/(win_size[1]+150)  # во сколько  раз растянуть экран
         # multi = 1
-        awd
         # print(multi)
         # print('экран', pygame.display.Info().current_h, pygame.display.Info().current_w)
         # print('итоговый экран', multi*win_size[1], multi*win_size[0])
         if multi*win_size[0]<=pygame.display.Info().current_w+1:      # подгоняем экран для компа
-            main_win = pygame.display.set_mode((int(18 * 24 * multi), int((24 * 24+150) * multi)), RESIZABLE)
-            win = pygame.Surface((int(18 * 24), int(24 * 24+150)))
+            multi = 1
+            win = pygame.display.set_mode((int(18 * 24 * multi), int((24 * 24+150) * multi)), RESIZABLE)
+            # win = pygame.Surface((int(18 * 24), int(24 * 24+150)))
             game = tetge('')
         else:               # экран для телефона
 
             multi = pygame.display.Info().current_w / win_size[0]
-            main_win = pygame.display.set_mode((int(18 * 24 * multi), int((24 * 24+150) * multi)))
-            win = pygame.Surface((int(18 * 24), int(24 * 24+150)))
+            multi = 1
+            win = pygame.display.set_mode((int(18 * 24 * multi), int((24 * 24+150) * multi)))
+            #win = pygame.Surface((int(18 * 24), int(24 * 24+150)))
             game = tetge()
 
     except Exception as er:     # если ошибка, то выводим
